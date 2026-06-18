@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { OtpScreen } from '@/features/auth';
 
-export default function OtpScreen() {
-  return <ScreenPlaceholder title="Login - OTP" figmaSection="Login & Onboarding" />;
+export default function Otp() {
+  return <OtpScreen />;
 }

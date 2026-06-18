@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { LoginScreen } from '@/features/auth';
 
-export default function LoginScreen() {
-  return <ScreenPlaceholder title="Login - Mobile No. Entry" figmaSection="Login & Onboarding" />;
+export default function Login() {
+  return <LoginScreen />;
 }

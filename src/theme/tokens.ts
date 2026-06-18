@@ -7,11 +7,16 @@ export const Colors = {
   textSecondary: '#4e535a',
   textOnDark: '#e1e7ef',
   accent: '#575fb4',
+  white: '#ffffff',
+  badge: '#f05252',
+  iconMuted: '#c5cdd6',
 } as const;
 
 export const Radii = {
   card: 16,
   pill: 48,
+  headerCorner: 24,
+  cta: 8,
 } as const;
 
 export const Fonts = {

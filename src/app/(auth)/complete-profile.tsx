@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { CompleteProfileScreen } from '@/features/onboarding';
 
-export default function CompleteProfileScreen() {
-  return <ScreenPlaceholder title="Complete Profile" figmaSection="Login & Onboarding" />;
+export default function CompleteProfile() {
+  return <CompleteProfileScreen />;
 }
