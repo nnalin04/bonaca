@@ -8,6 +8,8 @@ Bonaca is a React Native (Expo) mobile app letting adult children remotely monit
 
 - **Figma file**: "Bonaca Designs", `fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens" (`nodeId 0:1`). Pull fresh via the Figma MCP tools (`get_metadata`, `get_design_context`, `get_screenshot`) rather than re-describing screens from memory — the design is the spec.
 - **PRD**: [`docs/PRD.md`](docs/PRD.md) — every functional requirement there is traceable to a Figma screen/state.
+- **Market research**: [`docs/MARKET_RESEARCH.md`](docs/MARKET_RESEARCH.md) — competitive landscape and the differentiation bets baked into the PRD's NFRs (confidence-scored alerting, regulatory-safe insight copy, NRI-diaspora GTM).
+- **Technical Requirements Document**: [`docs/TECHNICAL_REQUIREMENTS.md`](docs/TECHNICAL_REQUIREMENTS.md) — the backend/infra decisions referenced in Tech Stack below, with full rationale and a build-sequencing milestone plan.
 - **Design tokens** (`src/theme/tokens.ts`): DM Sans font; header gradient `#090c2c` → `#555ec2`; background `#fafafa`; card border `#e4e9e7`; 16px card radius.
 - **Representative node-IDs** for the highest-traffic screens (jump straight to `get_design_context` instead of re-discovering):
 
@@ -53,10 +55,18 @@ docs/PRD.md
 
 ## Tech Stack
 
+**Mobile (built):**
 - Expo (~56) + React Native (0.85) + TypeScript, Expo Router (file-based routing, typed routes enabled).
 - React Compiler experiment enabled (`app.json` → `experiments.reactCompiler`).
 - ESLint (`eslint-config-expo`) + Prettier (`eslint-config-prettier` disables conflicting style rules).
-- No backend, no state management library, no auth/DB/payment SDK yet.
+
+**Backend (decided in `docs/TECHNICAL_REQUIREMENTS.md`, not yet implemented):**
+- **Supabase** (Postgres + Edge Functions, `ap-south-1`/Mumbai region) — chosen primarily because Row Level Security maps directly onto the Primary/Secondary/Tertiary `SharingGrant` permission model. Time-series rollups via plain Postgres + `pg_cron`, not TimescaleDB (deprecated on new Supabase Postgres-17 projects, and not needed at this app's data volume).
+- **MSG91** for OTP SMS delivery (called from a Supabase Edge Function, not Supabase's built-in phone auth) — India requires DLT template registration before any OTP SMS can be sent; this has multi-day lead time and should be started early, independent of when the rest of the backend is built.
+- **Payments — platform-and-region-specific, not a single integration**: Apple requires StoreKit/IAP on iOS everywhere, including India (their "UPI" option funds Apple's own billing, it is not a bypass). Android in India can use Google's User Choice Billing to route through Razorpay directly at a reduced fee — this is the only path where the Figma "Payment Gateway" screen's direct-billing assumption holds as designed. Use **RevenueCat** to unify entitlements across both rails rather than hand-rolling receipt validation per platform.
+- **Expo's push notification service** (not direct FCM/APNs — natural fit given the Expo client).
+- **Sentry** (crash/error reporting) + **PostHog** (product analytics) to actually measure the PRD's Success Metrics from day one.
+- No state management library yet — not decided.
 
 ## Dev Conventions
 
@@ -65,13 +75,15 @@ docs/PRD.md
 - New domain types go in `src/types/index.ts`, not scattered per-feature.
 - Ground new screens in the actual Figma node for that screen — don't invent layout/copy.
 
-## Not Set Up Yet (explicitly deferred)
+## Not Set Up Yet (decided, but not yet built)
 
-- Authentication (real OTP/SMS provider, session handling).
-- Backend of any kind (API server, database/ORM).
-- Payment SDK (UPI/PayPal/Amex/Mastercard/Apple Pay are designed in Figma, not wired to a processor).
-- Push notifications.
+Stack choices for all of these are now decided (see Tech Stack above and `docs/TECHNICAL_REQUIREMENTS.md` §12 for build order) — none are implemented yet:
+
+- Authentication (Supabase Auth + MSG91 OTP delivery, DLT registration not yet started).
+- Backend (Supabase project not yet provisioned — no API server, no database).
+- Payment SDK (RevenueCat + StoreKit/Play Billing/Razorpay per the platform-and-region split above; Figma designs the UI, none of it is wired to a processor).
+- Push notifications (Expo push service).
 - Real HealthKit / Health Connect native calls — `src/lib/health/appleHealth.ts` and `healthConnect.ts` are stubs.
-- State management library.
+- State management library — genuinely undecided, not just unbuilt.
 
-Do not install SDKs or scaffold infra for any of the above without an explicit task — each is a deliberate architectural decision to be scoped on its own.
+Do not install SDKs or scaffold infra for any of the above without an explicit task — follow the milestone order in `docs/TECHNICAL_REQUIREMENTS.md` §12 rather than building ad hoc.

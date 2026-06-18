@@ -1,6 +1,6 @@
 # Bonaca — Product Requirements Document
 
-**Source of truth:** Figma file "Bonaca Designs" (`fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens"). Every requirement below is traceable to a named screen or state in that file — none are speculative additions.
+**Source of truth:** Figma file "Bonaca Designs" (`fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens") for every screen/state, and [`docs/MARKET_RESEARCH.md`](MARKET_RESEARCH.md) for the competitive/business decisions referenced in sections 6–8 below. Every requirement is traceable to one of those two documents — none are speculative additions.
 
 ## 1. Overview
 
@@ -10,7 +10,7 @@ Bonaca closes that gap by reading the health and activity data already being col
 
 ## 2. Target Users
 
-- **Primary Member** — the subscriber and account owner, typically the adult child. Pays for the subscription, invites other members, manages permissions, and can optionally monitor their own metrics too (Home - Primary screen shows "own device card" alongside the family list).
+- **Primary Member** — the subscriber and account owner, typically the adult child. Pays for the subscription, invites other members, manages permissions, and can optionally monitor their own metrics too (Home - Primary screen shows "own device card" alongside the family list). Two GTM-relevant variants, both in scope from MVP: **India-resident** (pays via UPI) and **NRI/diaspora** (pays via international card/Apple Pay/PayPal) — market research identified the latter as the highest-willingness-to-pay segment and a gap no India eldercare competitor targets explicitly (`MARKET_RESEARCH.md` §10).
 - **Secondary Member** — typically the parent. Authenticates via phone number + OTP only (no password), completes a minimal profile, and connects their own wearable from their own device (Profile - Secondary Member → Connect Wearable). UX for this role assumes low tech literacy: short flows, large touch targets, no jargon.
 - **Tertiary / invited viewer members** — other family (siblings, other relatives) invited via the Invite flow, granted visibility into specific data scopes only (vitals / activity / behaviour / location) through Edit Permissions, not full account control.
 
@@ -21,7 +21,7 @@ Bonaca closes that gap by reading the health and activity data already being col
 3. **Inviting a family member** — Primary Member sends an Invite (phone number + role offered); invitee accepts and lands in onboarding as a Tertiary member with default permissions.
 4. **Daily monitoring loop** — Home (Primary or Secondary variant) → tap a family member's card → Member Details (Vitals / Activity / Behaviour tabs: routine adherence, screen time, outdoor time, last active location, Pin/Unpin, Edit Nick Name, Hidden Members for decluttering) → tap a metric → Metric Details (1D/7D/4W/1Y trend chart, min/max, auto-generated insight text, date stepper).
 5. **Alerts and insights → Notifications** — anomaly or trend insights generated against MetricReading data surface as Notifications, deep-linking into the relevant Metric Details screen.
-6. **Subscription lifecycle** — Free Trial → Banner - Subscription expiring soon → Banner - Subscription expired → Regular Subscription (Active) or Subscriptions - Cancelled, with Payment Gateway and a payment-method picker (UPI, PayPal, American Express, Mastercard, Apple Pay). Subscription is **account-level**, not per-member — one Primary Member's subscription covers all their connected Secondary/Tertiary members.
+6. **Subscription lifecycle** — Free Trial (target **5+ days**, not a 1–3 day teaser — published conversion data for comparable consumer subscriptions shows 5+ day trials convert at ~44–45% vs. ~30% for shorter trials; see `MARKET_RESEARCH.md` §6) → Banner - Subscription expiring soon → Banner - Subscription expired → Regular Subscription (Active) or Subscriptions - Cancelled, with Payment Gateway and a payment-method picker (UPI, PayPal, American Express, Mastercard, Apple Pay). Subscription is **account-level**, not per-member — one Primary Member's subscription covers all their connected Secondary/Tertiary members.
 7. **Permission management** — Primary Member uses Edit Permissions to control what each invited member can see (SharingGrant scopes: vitals/activity/behaviour/location); Pin/Unpin and Hidden Members control Home-screen ordering/visibility without affecting underlying access.
 
 ## 4. Functional Requirements
@@ -62,17 +62,18 @@ Already implemented in `src/types/index.ts` — this section documents intent, n
 - **Low-literacy / accessibility UX**: Secondary Member flows (OTP-only auth, Complete Profile, Connect Wearable) must use large touch targets, minimal text, and avoid technical jargon, per the design's phone-number-first approach.
 - **Wearable sync reliability and staleness**: Card - Disconnected and Connection Issue - Retry states must be reachable from real sync failures, not just designed-but-unused; Home/Member Details should visibly indicate when a metric's `lastSyncedAt` is stale.
 - **Chart performance**: Metric Details' 1Y rollup view must remain responsive — this implies pre-aggregation of `MetricReading` rather than client-side rollup of raw readings at query time.
-- **Anomaly alerting without alert fatigue**: Insight generation (`kind: 'anomaly'`) needs a threshold/dedup strategy so Notifications don't overwhelm the Primary Member.
+- **Anomaly alerting without alert fatigue**: Insight generation (`kind: 'anomaly'`) needs a threshold/dedup strategy so Notifications don't overwhelm the Primary Member. Published clinical-monitoring research found 80–99% of alarms in comparable monitoring contexts are noise; the mitigation pattern that worked there — aggregating multiple weak signals into one confidence-scored event rather than alerting on every threshold crossing — cut false alerts up to ~99.3% (`MARKET_RESEARCH.md` §10). Bonaca's `Insight` model should implement this as: (a) a time-window collapse (don't re-alert on the same metric within a cooldown window), (b) a severity/confidence score combining multiple readings before an `anomaly`-kind Insight is created, not a single out-of-range reading. This is the single highest-leverage differentiator identified versus researched competitors, none of which do this.
+- **Regulatory-safe insight copy**: both India's CDSCO and the FDA's SaMD guidance permit "pattern" language ("your mother's resting heart rate has been trending up this week") but treat diagnostic or disease-naming language ("this may indicate arrhythmia") as crossing into medical-device territory, which carries a materially different compliance burden. All `Insight.generatedText` content must be reviewed against this line before shipping copy — see `MARKET_RESEARCH.md` §9 and §10. Treating this constraint transparently (a visible "how we generate insights" explainer to the user) is itself a trust-building differentiator, not just a compliance checkbox.
 
 ## 7. Success Metrics
 
 - Invite-to-connect activation rate (Invite sent → Secondary Member completes Connect Wearable).
 - Weekly engagement (Primary Member opens Home / views a Member Details screen).
-- Trial → paid conversion rate, and time-to-cancel for Subscriptions - Cancelled.
+- Trial → paid conversion rate (benchmark target ~44–45% against a 5+ day trial, per `MARKET_RESEARCH.md` §6 — track separately from 6-month retention, which industry data shows typically lands near half the headline conversion number), and time-to-cancel for Subscriptions - Cancelled.
 - Anomaly-to-acknowledgement time (Insight of kind `anomaly` generated → Notification opened).
 
 ## 8. Phasing Plan
 
-- **MVP** — Apple HealthKit + Google Health Connect only, via the parent-side sync-companion model described in the NFRs above. Core journeys: onboarding, connect wearable, daily monitoring loop, notifications, account-level billing with UPI-first payment (matches India-first user base), Edit Permissions for invited members.
+- **MVP** — Apple HealthKit + Google Health Connect only, via the parent-side sync-companion model described in the NFRs above. Core journeys: onboarding, connect wearable, daily monitoring loop, notifications, account-level billing with UPI-first payment for the India-resident segment **and** international cards/Apple Pay/PayPal live from day one for the NRI-diaspora segment — not a later phase. Market research found no India eldercare competitor (Emoha, Khyaal, Samarth) explicitly targets NRI families despite them being the highest-willingness-to-pay segment, and Bonaca's payment methods are already designed for both in Figma — this is a launch-time positioning decision, not a Phase 2 add-on. Edit Permissions for invited members; confidence-scored anomaly alerting and regulatory-safe insight copy (see NFRs) implemented from MVP, not retrofitted.
 - **Phase 2** — Direct wearable integrations beyond Apple/Google: Google Health API for Fitbit devices (not the legacy Fitbit Web API), Garmin Health API. Evaluate a multi-wearable aggregator (e.g. Terra) once a third or fourth provider is in scope, as a build-vs-buy call against maintaining N separate OAuth integrations.
 - **Future** — Multi-account membership (one Secondary Member shared across multiple Primary Members' accounts), clinician/caregiver professional roles, web dashboard for Primary Members who want a larger-screen view.
