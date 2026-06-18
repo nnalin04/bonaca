@@ -1,1 +1,1 @@
-export {};
+export { MetricDetailsScreen } from './MetricDetailsScreen';
