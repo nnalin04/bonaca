@@ -6,7 +6,7 @@ Bonaca is a React Native (Expo) mobile app letting adult children remotely monit
 
 ## Source of Truth
 
-- **Figma file**: "Bonaca Designs", `fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens" (`nodeId 0:1`). Pull fresh via the Figma MCP tools (`get_metadata`, `get_design_context`, `get_screenshot`) rather than re-describing screens from memory — the design is the spec.
+- **Figma file**: "Bonaca Designs", `fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens" (`nodeId 0:1`). Pull fresh via the Figma MCP tools (`get_metadata`, `get_design_context`, `get_screenshot`) rather than re-describing screens from memory — the design is the spec. **If the Figma MCP server returns a "Starter plan tool call limit reached" error, it's a hard plan ceiling, not a transient rate limit** — don't retry it. Instead use the Figma REST API directly (`api.figma.com/v1/files/:key/nodes` and `/v1/images/:key`) with the token in `.env` (`FIGMA_API_TOKEN`, gitignored), which has a separate, much higher quota. A full local cache of every screen (JSON layout + 2x PNG screenshot) already exists at `.design-reference/screens/` — see `.design-reference/manifest.md` for the node-ID → file mapping; check there before re-fetching.
 - **PRD**: [`docs/PRD.md`](docs/PRD.md) — every functional requirement there is traceable to a Figma screen/state.
 - **Market research**: [`docs/MARKET_RESEARCH.md`](docs/MARKET_RESEARCH.md) — competitive landscape and the differentiation bets baked into the PRD's NFRs (confidence-scored alerting, regulatory-safe insight copy, NRI-diaspora GTM).
 - **Technical Requirements Document**: [`docs/TECHNICAL_REQUIREMENTS.md`](docs/TECHNICAL_REQUIREMENTS.md) — the backend/infra decisions referenced in Tech Stack below, with full rationale and a build-sequencing milestone plan.
@@ -16,11 +16,18 @@ Bonaca is a React Native (Expo) mobile app letting adult children remotely monit
   | Section | nodeId |
   |---|---|
   | Home - Primary | `188:2977` (section) / `188:2859` (Home frame) |
-  | Member Details | `196:4233` |
-  | Metric Details | `197:1137` |
+  | Member Details | `196:4233` (section) / `43:4129` (canonical frame) |
+  | Metric Details | `197:1137` (section) / `197:3828`, `197:3909` (frames) |
+  | Splash | `43:3178` |
+  | Login - Mobile No. Entry | `49:268` |
+  | Login - OTP | `49:364` (+ `219:1488` Incorrect OTP, `49:483` Resend OTP) |
+  | Complete Profile | `60:595`, `60:768` (two states) |
   | Connect Wearable (onboarding) | `60:634` |
-  | Profile - Primary Member | `197:4003` |
-  | Profile - Secondary Member | `197:5916` |
+  | Notifications | `286:15753` |
+  | Select Wearable Account | `197:10387`, `197:11178`, `222:1723` (3 variants) + `225:3615` (Connection Issue - Retry) |
+  | Payment Gateway | `197:10384` (trial signup), `197:11043` (renewal) |
+  | Profile - Primary Member | `197:4003` (section) / `39:2025` (frame) |
+  | Profile - Secondary Member | `197:5916` (section) / `197:5921` (frame), subscription states: `197:6270`/`197:7272`/`197:6835`/`197:7049` |
 
 ## Domain Model
 
