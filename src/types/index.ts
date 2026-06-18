@@ -82,6 +82,12 @@ export interface Notification {
   read: boolean;
   deepLinkTarget: string;
   createdAt: string;
+  /** Short notification headline, e.g. the member's display name shown in the list row. */
+  title: string;
+  /** Notification body copy. */
+  body: string;
+  /** Pre-formatted relative/absolute timestamp for display (e.g. "1 hr ago", "Yesterday, 3:30 PM"). */
+  displayTime: string;
 }
 
 export type InviteStatus = 'pending' | 'accepted' | 'expired';
