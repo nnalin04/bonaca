@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { ConnectWearableScreen } from '@/features/onboarding';
 
-export default function ConnectWearableScreen() {
-  return <ScreenPlaceholder title="Connect Wearable" figmaSection="Login & Onboarding" />;
+export default function ConnectWearable() {
+  return <ConnectWearableScreen />;
 }
