@@ -47,6 +47,8 @@ const providerLabels: Record<WearableConnection['provider'], string> = {
   'health-connect': 'Health Connect',
   fitbit: 'Fitbit',
   garmin: 'Garmin',
+  'samsung-health': 'Samsung Health',
+  oura: 'Oura',
 };
 
 export function ProfileScreen() {
