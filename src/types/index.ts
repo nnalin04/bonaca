@@ -16,7 +16,13 @@ export interface Member {
   hidden: boolean;
 }
 
-export type WearableProvider = 'apple-health' | 'health-connect' | 'fitbit' | 'garmin';
+export type WearableProvider =
+  | 'apple-health'
+  | 'health-connect'
+  | 'fitbit'
+  | 'garmin'
+  | 'samsung-health'
+  | 'oura';
 export type WearableConnectionStatus = 'connected' | 'disconnected' | 'needs-reauth';
 
 export interface WearableConnection {
