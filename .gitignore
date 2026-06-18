@@ -44,3 +44,6 @@ example
 # generated native folders
 /ios
 /android
+
+# Figma reference screenshots/assets pulled during development
+/.design-reference
