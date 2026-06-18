@@ -22,6 +22,9 @@ import type { Member, WearableConnection } from '@/types';
 
 // Mock "current user" — mirrors the local hardcoded pattern used in HomeScreen.tsx.
 // Swap `role` to 'secondary' to preview the Secondary Member variant during dev.
+// Note: per the real Figma design (node 197:5921), the Secondary variant renders
+// the exact same settings rows as Primary (197:4003) — only the profile summary
+// (name/avatar/phone) differs. There is no row-level gating by role on this screen.
 const currentMember: Member = {
   id: 'member-self',
   accountId: 'account-self',
@@ -30,6 +33,8 @@ const currentMember: Member = {
   pinned: true,
   hidden: false,
 };
+
+const secondaryMemberName = 'Rakesh P Kumar';
 
 const currentMemberPhone = '+91 97426 59964';
 
@@ -48,6 +53,7 @@ export function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isPrimary = currentMember.role === 'primary';
+  const displayName = isPrimary ? currentMember.name : secondaryMemberName;
 
   return (
     <View style={styles.screen}>
@@ -58,7 +64,7 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}>
         <ProfileSummaryCard
           avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
-          name={currentMember.name}
+          name={displayName}
           phoneNumber={currentMemberPhone}
           onPress={() => {
             // Profile Details drill-down — not yet built, no-op for now.
@@ -85,32 +91,26 @@ export function ProfileScreen() {
 
         <SettingsListCard>
           {[
-            ...(isPrimary
-              ? [
-                  <SettingsListItem
-                    key="members"
-                    icon={IconListCheck}
-                    label="Members & Permissions"
-                    onPress={() => {}}
-                  />,
-                ]
-              : []),
+            // Per the real Figma design (197:5921 Secondary vs 39:2025 Primary), these
+            // rows are identical across both roles — no role-based gating on this screen.
+            <SettingsListItem
+              key="members"
+              icon={IconListCheck}
+              label="Members & Permissions"
+              onPress={() => {}}
+            />,
             <SettingsListItem
               key="subscription"
               icon={IconCash}
               label="Manage Subscription"
               onPress={() => router.push('/subscription/payment-gateway')}
             />,
-            ...(isPrimary
-              ? [
-                  <SettingsListItem
-                    key="hidden-members"
-                    icon={IconUsers}
-                    label="Hidden Members"
-                    onPress={() => {}}
-                  />,
-                ]
-              : []),
+            <SettingsListItem
+              key="hidden-members"
+              icon={IconUsers}
+              label="Hidden Members"
+              onPress={() => {}}
+            />,
             <SettingsListItem
               key="documentation"
               icon={IconFileDescription}
