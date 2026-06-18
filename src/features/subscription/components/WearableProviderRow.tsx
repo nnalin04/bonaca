@@ -1,5 +1,6 @@
 import { IconChevronRight } from '@tabler/icons-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, type ImageSource } from 'expo-image';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 import type { WearableProvider } from '@/types';
@@ -7,15 +8,13 @@ import type { WearableProvider } from '@/types';
 interface WearableProviderRowProps {
   provider: WearableProvider;
   label: string;
-  iconBackground: string;
-  icon: React.ReactNode;
+  iconSource: ImageSource | number;
   onPress?: () => void;
 }
 
 export function WearableProviderRow({
   label,
-  iconBackground,
-  icon,
+  iconSource,
   onPress,
 }: WearableProviderRowProps) {
   return (
@@ -24,7 +23,7 @@ export function WearableProviderRow({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}>
-      <View style={[styles.iconCircle, { backgroundColor: iconBackground }]}>{icon}</View>
+      <Image source={iconSource} style={styles.iconCircle} contentFit="cover" />
       <Text style={styles.label}>{label}</Text>
       <IconChevronRight size={20} color={Colors.textSecondary} strokeWidth={2} />
     </Pressable>
@@ -48,8 +47,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   label: {
     flex: 1,

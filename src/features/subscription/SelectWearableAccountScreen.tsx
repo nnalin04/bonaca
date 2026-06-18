@@ -1,4 +1,3 @@
-import { IconActivity, IconCircleDot, IconDeviceWatch } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,26 +13,31 @@ export type SelectWearableAccountVariant = 'initial' | 'mid-flow' | 'retry';
 interface ProviderOption {
   provider: WearableProvider;
   label: string;
-  iconBackground: string;
+  iconSource: number;
 }
 
 const providerOptions: ProviderOption[] = [
-  { provider: 'fitbit', label: 'Fitbit', iconBackground: '#0b3b36' },
-  { provider: 'garmin', label: 'Garmin', iconBackground: '#000000' },
-  { provider: 'samsung-health', label: 'Samsung Health', iconBackground: '#1ba9b5' },
-  { provider: 'oura', label: 'Oura', iconBackground: '#16203c' },
+  {
+    provider: 'fitbit',
+    label: 'Fitbit',
+    iconSource: require('../../../assets/images/wearables/fitbit.png'),
+  },
+  {
+    provider: 'garmin',
+    label: 'Garmin',
+    iconSource: require('../../../assets/images/wearables/garmin.png'),
+  },
+  {
+    provider: 'samsung-health',
+    label: 'Samsung Health',
+    iconSource: require('../../../assets/images/wearables/samsung-health.png'),
+  },
+  {
+    provider: 'oura',
+    label: 'Oura',
+    iconSource: require('../../../assets/images/wearables/oura.png'),
+  },
 ];
-
-function providerIcon(provider: WearableProvider) {
-  switch (provider) {
-    case 'samsung-health':
-      return <IconActivity size={18} color={Colors.white} strokeWidth={2} />;
-    case 'oura':
-      return <IconCircleDot size={18} color={Colors.white} strokeWidth={2} />;
-    default:
-      return <IconDeviceWatch size={18} color={Colors.white} strokeWidth={2} />;
-  }
-}
 
 interface SelectWearableAccountScreenProps {
   variant?: SelectWearableAccountVariant;
@@ -69,8 +73,7 @@ export function SelectWearableAccountScreen({
               key={option.provider}
               provider={option.provider}
               label={option.label}
-              iconBackground={option.iconBackground}
-              icon={providerIcon(option.provider)}
+              iconSource={option.iconSource}
               onPress={() => handleSelectProvider(option.provider)}
             />
           ))}
