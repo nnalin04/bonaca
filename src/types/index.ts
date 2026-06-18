@@ -105,6 +105,18 @@ export interface Subscription {
   renewedAt: string | null;
 }
 
+// Payment methods shown on the Payment Gateway screen (Figma section "Connecting a Wearable").
+// UI-only for now — no processor is wired up (RevenueCat/StoreKit/Razorpay per
+// docs/TECHNICAL_REQUIREMENTS.md are decided but not yet implemented).
+export type PaymentMethodType = 'upi' | 'paypal' | 'amex' | 'mastercard' | 'apple-pay';
+
+export interface PaymentMethod {
+  id: string;
+  type: PaymentMethodType;
+  label: string;
+  detail?: string;
+}
+
 export type SharingScope = 'vitals' | 'activity' | 'behaviour' | 'location';
 
 export interface SharingGrant {

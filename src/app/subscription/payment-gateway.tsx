@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { PaymentGatewayScreen } from '@/features/subscription';
 
-export default function PaymentGatewayScreen() {
-  return <ScreenPlaceholder title="Payment Gateway" figmaSection="Connecting a Wearable" />;
+export default function PaymentGateway() {
+  return <PaymentGatewayScreen />;
 }

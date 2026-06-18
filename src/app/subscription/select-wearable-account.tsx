@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { SelectWearableAccountScreen } from '@/features/subscription';
 
-export default function SelectWearableAccountScreen() {
-  return <ScreenPlaceholder title="Select Wearable Account" figmaSection="Connecting a Wearable" />;
+export default function SelectWearableAccount() {
+  return <SelectWearableAccountScreen />;
 }
