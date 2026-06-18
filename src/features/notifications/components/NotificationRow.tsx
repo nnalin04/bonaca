@@ -1,3 +1,4 @@
+import { IconUserFilled } from '@tabler/icons-react-native';
 import { Image, type ImageSource } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -5,43 +6,32 @@ import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface NotificationRowProps {
   avatarSource?: ImageSource | number;
-  initials: string;
   title: string;
   body: string;
   displayTime: string;
-  unread: boolean;
 }
 
-export function NotificationRow({
-  avatarSource,
-  initials,
-  title,
-  body,
-  displayTime,
-  unread,
-}: NotificationRowProps) {
+export function NotificationRow({ avatarSource, title, body, displayTime }: NotificationRowProps) {
   return (
     <View style={styles.card}>
       {avatarSource ? (
         <Image source={avatarSource} style={styles.avatar} contentFit="cover" />
       ) : (
         <View style={styles.avatarFallback}>
-          <Text style={styles.avatarInitials}>{initials}</Text>
+          <IconUserFilled size={22} color={Colors.avatarIcon} />
         </View>
       )}
 
       <View style={styles.textBlock}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+          <Text style={styles.time}>{displayTime}</Text>
+        </View>
         <Text style={styles.body} numberOfLines={2}>
           {body}
         </Text>
-      </View>
-
-      <View style={styles.metaBlock}>
-        {unread && <View style={styles.unreadDot} />}
-        <Text style={styles.time}>{displayTime}</Text>
       </View>
     </View>
   );
@@ -70,19 +60,20 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.avatarFallbackBackground,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarInitials: {
-    fontFamily: Fonts.family,
-    fontWeight: '600',
-    fontSize: 14,
-    color: Colors.white,
+    overflow: 'hidden',
   },
   textBlock: {
     flex: 1,
     gap: 4,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   title: {
     fontFamily: Fonts.family,
@@ -93,25 +84,15 @@ const styles = StyleSheet.create({
   },
   body: {
     fontFamily: Fonts.family,
-    fontWeight: '400',
+    fontWeight: '500',
     fontSize: 12,
     lineHeight: 16,
     color: Colors.textSecondary,
   },
-  metaBlock: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.badge,
-  },
   time: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: Colors.textSecondary,
   },

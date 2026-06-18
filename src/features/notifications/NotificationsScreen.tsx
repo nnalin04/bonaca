@@ -10,7 +10,6 @@ import type { Notification } from '@/types';
 
 interface NotificationDisplay extends Notification {
   avatarSource?: number;
-  initials: string;
 }
 
 const notifications: NotificationDisplay[] = [
@@ -24,7 +23,6 @@ const notifications: NotificationDisplay[] = [
     title: 'Mom',
     body: 'Subscription expiring soon, renew to continue uninterrupted health monitoring',
     displayTime: '1 hr ago',
-    initials: 'M',
   },
   {
     id: 'notif-2',
@@ -36,7 +34,7 @@ const notifications: NotificationDisplay[] = [
     title: 'Dad',
     body: 'Average heart rate has been elevated since morning. Consider checking in.',
     displayTime: '4 hrs ago',
-    initials: 'D',
+    avatarSource: require('../../../assets/images/avatars/prasanna-kumar.png'),
   },
   {
     id: 'notif-3',
@@ -49,7 +47,6 @@ const notifications: NotificationDisplay[] = [
     body: 'Rakesh has requested ₹249 to renew your wearable connection. Tap to pay.',
     displayTime: 'Yesterday, 3:30 PM',
     avatarSource: require('../../../assets/images/avatars/prasanna-kumar.png'),
-    initials: 'P',
   },
   {
     id: 'notif-4',
@@ -61,7 +58,6 @@ const notifications: NotificationDisplay[] = [
     title: 'Rekha P',
     body: 'Rakesh has requested ₹249 to renew your wearable connection. Tap to pay.',
     displayTime: '1 week ago',
-    initials: 'R',
   },
 ];
 
@@ -83,11 +79,9 @@ export function NotificationsScreen() {
             <NotificationRow
               key={notification.id}
               avatarSource={notification.avatarSource}
-              initials={notification.initials}
               title={notification.title}
               body={notification.body}
               displayTime={notification.displayTime}
-              unread={!notification.read}
             />
           ))
         )}
@@ -103,7 +97,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 20,
     gap: 16,
   },
 });
