@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
@@ -7,17 +7,27 @@ interface MemberSyncCardProps {
   avatarSource: number;
   displayName: string;
   syncLabel: string;
+  onPress?: () => void;
 }
 
-export function MemberSyncCard({ avatarSource, displayName, syncLabel }: MemberSyncCardProps) {
+export function MemberSyncCard({
+  avatarSource,
+  displayName,
+  syncLabel,
+  onPress,
+}: MemberSyncCardProps) {
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={displayName}>
       <Image source={avatarSource} style={styles.avatar} contentFit="cover" />
       <View style={styles.textBlock}>
         <Text style={styles.name}>{displayName}</Text>
         <Text style={styles.sync}>{syncLabel}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

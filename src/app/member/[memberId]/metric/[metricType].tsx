@@ -1,16 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { MetricDetailsScreen } from '@/features/metrics';
+import type { MetricType } from '@/types';
 
-export default function MetricDetailsScreen() {
+export default function MetricDetails() {
   const { memberId, metricType } = useLocalSearchParams<{
     memberId: string;
-    metricType: string;
+    metricType: MetricType;
   }>();
-  return (
-    <ScreenPlaceholder
-      title={`${metricType} — ${memberId}`}
-      figmaSection="Metric Details"
-    />
-  );
+
+  return <MetricDetailsScreen memberId={memberId} metricType={metricType} />;
 }

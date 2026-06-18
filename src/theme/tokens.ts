@@ -10,6 +10,12 @@ export const Colors = {
   white: '#ffffff',
   badge: '#f05252',
   iconMuted: '#c5cdd6',
+  // Member/Metric Details additions (Figma nodes 196:4233, 197:1137)
+  tabBarTrack: '#f0f3ff',
+  tabBarBorder: '#edeeff',
+  chartLine: '#e07a5f',
+  chartAreaFill: 'rgba(224, 122, 95, 0.1)',
+  insightCardBackground: 'rgba(213, 213, 81, 0.1)',
 } as const;
 
 export const Radii = {

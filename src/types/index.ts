@@ -14,10 +14,19 @@ export interface Member {
   nickname?: string;
   pinned: boolean;
   hidden: boolean;
+  /** Short status line shown under the member's name on Member Details, e.g. "A few vitals show improvement today". */
+  statusMessage?: string;
 }
 
-export type WearableProvider = 'apple-health' | 'health-connect' | 'fitbit' | 'garmin';
-export type WearableConnectionStatus = 'connected' | 'disconnected' | 'needs-reauth';
+export type WearableProvider =
+  | 'apple-health'
+  | 'health-connect'
+  | 'fitbit'
+  | 'garmin';
+export type WearableConnectionStatus =
+  | 'connected'
+  | 'disconnected'
+  | 'needs-reauth';
 
 export interface WearableConnection {
   id: string;
@@ -34,7 +43,27 @@ export type MetricType =
   | 'screen_time'
   | 'outdoor_time'
   | 'routine_adherence'
-  | 'last_active_location';
+  | 'last_active_location'
+  // Additional Vitals-tab metric cards present in the Member Details Figma design (node 196:4233)
+  // that aren't yet broken out as PRD-level metrics (docs/PRD.md only formally lists the 7 above).
+  | 'heart_rate_variability'
+  | 'blood_oxygen'
+  | 'respiration_rate'
+  | 'stress_level'
+  | 'body_temperature'
+  | 'ecg'
+  | 'blood_glucose'
+  | 'vo2_max'
+  // Additional Activity-tab metric cards.
+  | 'calories'
+  | 'workouts'
+  | 'training_load';
+
+/** Qualitative comparison of a reading against the member's personal baseline, shown as a caption under the value (e.g. "Higher than usual"). */
+export type MetricTrendLabel =
+  | 'higher_than_usual'
+  | 'lower_than_usual'
+  | 'same_as_usual';
 
 export interface MetricReading {
   id: string;
@@ -44,6 +73,12 @@ export interface MetricReading {
   unit: string;
   recordedAt: string;
   sourceDeviceId: string;
+  /** Comparison-to-baseline caption shown on metric cards, e.g. "Higher than usual". */
+  trendLabel?: MetricTrendLabel;
+  /** Lowest reading in the displayed range, for chart-card min/max captions (e.g. "Lowest: 78 bpm"). */
+  rangeMin?: number;
+  /** Highest reading in the displayed range, for chart-card min/max captions (e.g. "Highest: 148 bpm"). */
+  rangeMax?: number;
 }
 
 export interface Insight {
@@ -55,7 +90,12 @@ export interface Insight {
   kind: 'trend' | 'anomaly';
 }
 
-export type SubscriptionStatus = 'trial' | 'active' | 'expiring' | 'expired' | 'cancelled';
+export type SubscriptionStatus =
+  | 'trial'
+  | 'active'
+  | 'expiring'
+  | 'expired'
+  | 'cancelled';
 
 export interface Subscription {
   id: string;

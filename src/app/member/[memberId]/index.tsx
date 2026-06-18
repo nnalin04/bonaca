@@ -1,13 +1,8 @@
 import { useLocalSearchParams } from 'expo-router';
 
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { MemberDetailsScreen } from '@/features/members';
 
-export default function MemberDetailsScreen() {
+export default function MemberDetails() {
   const { memberId } = useLocalSearchParams<{ memberId: string }>();
-  return (
-    <ScreenPlaceholder
-      title={`Member Details — ${memberId}`}
-      figmaSection="Member Details (Vitals / Activity / Behaviour tabs)"
-    />
-  );
+  return <MemberDetailsScreen memberId={memberId} />;
 }

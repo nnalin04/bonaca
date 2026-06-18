@@ -34,12 +34,16 @@ export function HomeScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
         showsVerticalScrollIndicator={false}>
         <MemberSyncCard
           avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
           displayName={`${currentMember.name} (You)`}
           syncLabel="Last synced: Just now"
+          onPress={() => router.push(`/member/${currentMember.id}`)}
         />
 
         <Text style={styles.sectionTitle}>Shared with you</Text>
@@ -53,6 +57,7 @@ export function HomeScreen() {
               avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
               displayName={member.nickname ?? member.name}
               syncLabel="Last synced: Just now"
+              onPress={() => router.push(`/member/${member.id}`)}
             />
           ))
         )}
