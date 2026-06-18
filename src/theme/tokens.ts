@@ -18,6 +18,13 @@ export const Colors = {
   chartLineSecondary: '#3a7f7c',
   chartAreaFillSecondary: 'rgba(58, 127, 124, 0.1)',
   insightCardBackground: 'rgba(213, 213, 81, 0.1)',
+  // Login & Onboarding additions (Figma nodes 43:3178, 49:268, 49:364, 60:595, 60:634)
+  inputBorder: '#e3e4e6',
+  inputBorderSubtle: '#ebebeb',
+  placeholderText: '#727779',
+  error: '#d63d3d',
+  avatarPlaceholderBg: '#e9e9e9',
+  avatarPlaceholderFg: '#007367',
 } as const;
 
 export const Radii = {
@@ -25,6 +32,8 @@ export const Radii = {
   pill: 48,
   headerCorner: 24,
   cta: 8,
+  cardTop: 48,
+  button: 12,
 } as const;
 
 export const Fonts = {

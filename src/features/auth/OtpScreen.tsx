@@ -1,43 +1,48 @@
-import { IconArrowLeft, IconShieldCheck } from '@tabler/icons-react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BackButton } from '@/features/auth/components/BackButton';
 import { OtpInput } from '@/features/auth/components/OtpInput';
-import { Colors, Fonts } from '@/theme/tokens';
+import { Colors, Fonts, Radii } from '@/theme/tokens';
 
-const OTP_LENGTH = 6;
-const RESEND_COOLDOWN_SECONDS = 30;
-// Stubbed correct code until OTP delivery (MSG91, per docs/TECHNICAL_REQUIREMENTS.md) is wired up.
-const STUB_VALID_OTP = '123456';
+const RESEND_COUNTDOWN_SECONDS = 30;
+const MOBILE_NUMBER = '9742657712';
+const OTP_LENGTH = 4;
+
+function formatCountdown(seconds: number) {
+  const mm = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const ss = (seconds % 60).toString().padStart(2, '0');
+  return `${mm}:${ss}`;
+}
 
 export function OtpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { phoneNumber } = useLocalSearchParams<{ phoneNumber?: string }>();
-
-  const [otp, setOtp] = useState('');
+  const [digits, setDigits] = useState<string[]>(['', '', '', '']);
+  const [secondsLeft, setSecondsLeft] = useState(RESEND_COUNTDOWN_SECONDS);
   const [hasError, setHasError] = useState(false);
-  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
-
-  const maskedPhone = useMemo(
-    () => (phoneNumber ? `+91 ${phoneNumber}` : 'your number'),
-    [phoneNumber],
-  );
 
   useEffect(() => {
-    if (cooldown === 0) return;
-    const timer = setInterval(() => setCooldown((s) => Math.max(0, s - 1)), 1000);
+    if (secondsLeft <= 0) return;
+    const timer = setInterval(() => {
+      setSecondsLeft((value) => Math.max(0, value - 1));
+    }, 1000);
     return () => clearInterval(timer);
-  }, [cooldown]);
+  }, [secondsLeft]);
 
-  const handleChangeOtp = (next: string) => {
-    setOtp(next);
+  const handleChange = (next: string[]) => {
     setHasError(false);
+    setDigits(next);
 
-    if (next.length === OTP_LENGTH) {
-      if (next === STUB_VALID_OTP) {
+    const code = next.join('');
+    if (code.length === OTP_LENGTH) {
+      // Stubbed verification: any code other than 1234 is treated as incorrect.
+      if (code === '1234') {
         router.push('/(auth)/complete-profile');
       } else {
         setHasError(true);
@@ -46,44 +51,43 @@ export function OtpScreen() {
   };
 
   const handleResend = () => {
-    if (cooldown > 0) return;
-    setOtp('');
+    setSecondsLeft(RESEND_COUNTDOWN_SECONDS);
     setHasError(false);
-    setCooldown(RESEND_COOLDOWN_SECONDS);
+    setDigits(['', '', '', '']);
   };
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => router.back()}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Back">
-          <IconArrowLeft size={24} color={Colors.textPrimary} strokeWidth={1.75} />
-        </Pressable>
+      <LinearGradient
+        colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
+        locations={[0.03, 0.81]}
+        start={{ x: 0.95, y: 0.29 }}
+        end={{ x: 0.05, y: 0.71 }}
+        style={styles.hero}>
+        <View style={[styles.backRow, { top: insets.top + 8 }]}>
+          <BackButton onPress={() => router.back()} />
+        </View>
+      </LinearGradient>
 
-        <View style={styles.iconBadge}>
-          <IconShieldCheck size={36} color={Colors.accent} strokeWidth={1.75} />
+      <View style={styles.card}>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>Verify OTP</Text>
+          <Text style={styles.subtitle}>
+            OTP sent to <Text style={styles.subtitleStrong}>{MOBILE_NUMBER}</Text>
+          </Text>
         </View>
 
-        <Text style={styles.title}>Enter the code</Text>
-        <Text style={styles.subtitle}>We sent a 6-digit code to {maskedPhone}</Text>
+        <OtpInput value={digits} onChange={handleChange} hasError={hasError} />
 
-        <View style={styles.otpBlock}>
-          <OtpInput length={OTP_LENGTH} value={otp} onChange={handleChangeOtp} hasError={hasError} />
-          {hasError && <Text style={styles.errorText}>Incorrect code. Please try again.</Text>}
-        </View>
+        {hasError && <Text style={styles.errorText}>Enter a valid OTP</Text>}
 
-        <View style={styles.resendRow}>
-          <Text style={styles.resendLabel}>Didn&apos;t get a code?</Text>
-          <Pressable onPress={handleResend} disabled={cooldown > 0} hitSlop={8}>
-            <Text style={[styles.resendAction, cooldown > 0 && styles.resendActionDisabled]}>
-              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
-            </Text>
+        {secondsLeft > 0 ? (
+          <Text style={styles.statusText}>Resend OTP in {formatCountdown(secondsLeft)}</Text>
+        ) : (
+          <Pressable onPress={handleResend} accessibilityRole="button" accessibilityLabel="Resend OTP">
+            <Text style={styles.resendLink}>Resend OTP</Text>
           </Pressable>
-        </View>
+        )}
       </View>
     </View>
   );
@@ -94,35 +98,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
+  hero: {
+    height: 254,
+  },
+  backRow: {
+    position: 'absolute',
+    left: 16,
+  },
+  card: {
     flex: 1,
-    paddingHorizontal: 24,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderTopLeftRadius: Radii.cardTop,
+    borderTopRightRadius: Radii.cardTop,
+    marginTop: -48,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    gap: 24,
+  },
+  titleBlock: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    gap: 4,
   },
   title: {
     fontFamily: Fonts.family,
     fontWeight: '600',
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 28,
     color: Colors.textPrimary,
-    marginBottom: 8,
   },
   subtitle: {
     fontFamily: Fonts.family,
@@ -130,36 +132,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: Colors.textSecondary,
-    marginBottom: 32,
   },
-  otpBlock: {
-    gap: 12,
+  subtitleStrong: {
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  statusText: {
+    fontFamily: Fonts.family,
+    fontWeight: '500',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
   errorText: {
     fontFamily: Fonts.family,
-    fontWeight: '400',
-    fontSize: 13,
-    color: Colors.badge,
+    fontWeight: '500',
+    fontSize: 16,
+    lineHeight: 22,
+    color: Colors.error,
+    textAlign: 'center',
+    marginTop: -12,
   },
-  resendRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 32,
-  },
-  resendLabel: {
-    fontFamily: Fonts.family,
-    fontWeight: '400',
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  resendAction: {
+  resendLink: {
     fontFamily: Fonts.family,
     fontWeight: '600',
     fontSize: 14,
+    lineHeight: 20,
     color: Colors.accent,
-  },
-  resendActionDisabled: {
-    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

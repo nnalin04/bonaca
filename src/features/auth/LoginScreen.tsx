@@ -1,79 +1,47 @@
-import { IconDeviceMobile, IconPhone } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AuthHero } from '@/features/auth/components/AuthHero';
+import { MobileNumberField } from '@/features/auth/components/MobileNumberField';
+import { PrimaryButton } from '@/features/auth/components/PrimaryButton';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
-
-const PHONE_LENGTH = 10;
 
 export function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
 
-  const isValid = useMemo(() => phoneNumber.length === PHONE_LENGTH, [phoneNumber]);
-
-  const handleContinue = () => {
-    if (!isValid) return;
-    router.push({ pathname: '/(auth)/otp', params: { phoneNumber } });
-  };
+  const canSubmit = mobileNumber.length === 10;
 
   return (
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.content, { paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }]}>
-        <View style={styles.iconBadge}>
-          <IconDeviceMobile size={36} color={Colors.accent} strokeWidth={1.75} />
+      <AuthHero
+        tagline={'Stay gently connected to your\nfamily’s daily wellbeing'}
+        height={464}
+      />
+
+      <View style={styles.card}>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>Login or Signup</Text>
+          <Text style={styles.subtitle}>Enter your mobile number to get started</Text>
         </View>
 
-        <Text style={styles.title}>What&apos;s your number?</Text>
-        <Text style={styles.subtitle}>
-          We&apos;ll send a one-time code to verify it&apos;s really you. No password needed.
-        </Text>
+        <MobileNumberField countryCode="+91" value={mobileNumber} onChangeText={setMobileNumber} />
 
-        <View style={styles.inputRow}>
-          <View style={styles.countryCode}>
-            <IconPhone size={18} color={Colors.textSecondary} strokeWidth={1.75} />
-            <Text style={styles.countryCodeText}>+91</Text>
-          </View>
-          <TextInput
-            style={styles.input}
-            value={phoneNumber}
-            onChangeText={(text) => setPhoneNumber(text.replace(/[^0-9]/g, '').slice(0, PHONE_LENGTH))}
-            placeholder="Mobile number"
-            placeholderTextColor={Colors.textSecondary}
-            keyboardType="number-pad"
-            maxLength={PHONE_LENGTH}
-            autoFocus
-            accessibilityLabel="Mobile number"
+        <View style={[styles.ctaBlock, { paddingBottom: insets.bottom + 16 }]}>
+          <PrimaryButton
+            label="Send OTP"
+            disabled={!canSubmit}
+            onPress={() => router.push('/(auth)/otp')}
           />
+          <Pressable accessibilityRole="link" accessibilityLabel="Privacy Policy">
+            <Text style={styles.privacyLink}>Privacy Policy</Text>
+          </Pressable>
         </View>
-
-        <View style={styles.spacer} />
-
-        <Pressable
-          style={[styles.cta, !isValid && styles.ctaDisabled]}
-          onPress={handleContinue}
-          disabled={!isValid}
-          accessibilityRole="button"
-          accessibilityLabel="Continue">
-          <Text style={styles.ctaText}>Continue</Text>
-        </Pressable>
-
-        <Text style={styles.legal}>
-          By continuing, you agree to Bonaca&apos;s Terms of Service and Privacy Policy.
-        </Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -82,30 +50,28 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.headerGradientEnd,
   },
-  content: {
+  card: {
     flex: 1,
-    paddingHorizontal: 24,
-  },
-  iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
     backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderTopLeftRadius: Radii.cardTop,
+    borderTopRightRadius: Radii.cardTop,
+    marginTop: -48,
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    gap: 24,
+  },
+  titleBlock: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
+    gap: 4,
   },
   title: {
     fontFamily: Fonts.family,
     fontWeight: '600',
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 28,
     color: Colors.textPrimary,
-    marginBottom: 8,
   },
   subtitle: {
     fontFamily: Fonts.family,
@@ -113,67 +79,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: Colors.textSecondary,
-    marginBottom: 32,
   },
-  inputRow: {
-    flexDirection: 'row',
+  ctaBlock: {
+    marginTop: 'auto',
+    gap: 24,
     alignItems: 'center',
-    height: 56,
-    borderRadius: Radii.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    backgroundColor: Colors.white,
-    paddingHorizontal: 16,
-    gap: 12,
   },
-  countryCode: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingRight: 12,
-    borderRightWidth: 1,
-    borderRightColor: Colors.cardBorder,
-  },
-  countryCodeText: {
-    fontFamily: Fonts.family,
-    fontWeight: '500',
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
-  input: {
-    flex: 1,
-    fontFamily: Fonts.family,
-    fontWeight: '500',
-    fontSize: 16,
-    color: Colors.textPrimary,
-    height: '100%',
-  },
-  spacer: {
-    flex: 1,
-  },
-  cta: {
-    height: 56,
-    borderRadius: Radii.pill,
-    backgroundColor: Colors.headerGradientEnd,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  ctaDisabled: {
-    opacity: 0.4,
-  },
-  ctaText: {
-    fontFamily: Fonts.family,
-    fontWeight: '600',
-    fontSize: 16,
-    color: Colors.white,
-  },
-  legal: {
+  privacyLink: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textPrimary,
+    textDecorationLine: 'underline',
   },
 });
