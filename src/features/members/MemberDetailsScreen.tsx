@@ -80,7 +80,23 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         unitSuffix={config.unitSuffix}
         trendText={formatTrendLabel(reading.trendLabel)}
         width="full"
-        accessory={points ? <MiniSparkline points={points} /> : undefined}
+        accessory={
+          points ? (
+            <MiniSparkline
+              points={points}
+              lineColor={
+                reading.metricType === 'heart_rate_variability'
+                  ? Colors.chartLineSecondary
+                  : undefined
+              }
+              areaColor={
+                reading.metricType === 'heart_rate_variability'
+                  ? Colors.chartAreaFillSecondary
+                  : undefined
+              }
+            />
+          ) : undefined
+        }
         onPress={() => goToMetric(reading)}
       />
     );

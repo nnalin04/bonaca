@@ -15,6 +15,8 @@ export const Colors = {
   tabBarBorder: '#edeeff',
   chartLine: '#e07a5f',
   chartAreaFill: 'rgba(224, 122, 95, 0.1)',
+  chartLineSecondary: '#3a7f7c',
+  chartAreaFillSecondary: 'rgba(58, 127, 124, 0.1)',
   insightCardBackground: 'rgba(213, 213, 81, 0.1)',
 } as const;
 

@@ -7,6 +7,8 @@ interface MiniSparklineProps {
   points: number[];
   width?: number;
   height?: number;
+  lineColor?: string;
+  areaColor?: string;
 }
 
 /** Lightweight area sparkline used on chart-style metric cards (Heart Rate, HRV, VO2 Max). */
@@ -14,6 +16,8 @@ export function MiniSparkline({
   points,
   width = 152,
   height = 54,
+  lineColor = Colors.chartLine,
+  areaColor = Colors.chartAreaFill,
 }: MiniSparklineProps) {
   if (points.length < 2) return null;
 
@@ -34,10 +38,10 @@ export function MiniSparkline({
 
   return (
     <Svg width={width} height={height}>
-      <Polygon points={areaPoints} fill={Colors.chartAreaFill} />
+      <Polygon points={areaPoints} fill={areaColor} />
       <Path
         d={linePath}
-        stroke={Colors.chartLine}
+        stroke={lineColor}
         strokeWidth={2}
         fill="none"
         strokeLinecap="round"
