@@ -1,10 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { ProfileScreen } from '@/features/profile';
 
-export default function ProfileScreen() {
-  return (
-    <ScreenPlaceholder
-      title="Profile & Settings"
-      figmaSection="Profile - Primary Member / Profile - Secondary Member"
-    />
-  );
+export default function Profile() {
+  return <ProfileScreen />;
 }
