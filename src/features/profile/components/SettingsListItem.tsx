@@ -13,17 +13,15 @@ interface TablerIconProps {
 interface SettingsListItemProps {
   icon: ComponentType<TablerIconProps>;
   label: string;
-  destructive?: boolean;
   onPress: () => void;
 }
 
 export function SettingsListItem({
   icon: Icon,
   label,
-  destructive = false,
   onPress,
 }: SettingsListItemProps) {
-  const labelColor = destructive ? Colors.badge : Colors.textPrimary;
+  const labelColor = Colors.textSecondary;
 
   return (
     <Pressable

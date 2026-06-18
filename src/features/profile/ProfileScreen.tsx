@@ -135,7 +135,6 @@ export function ProfileScreen() {
               key="logout"
               icon={IconLogout}
               label="Log Out"
-              destructive
               onPress={() => router.replace('/(auth)/login')}
             />,
           ]}
