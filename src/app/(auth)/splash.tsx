@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { SplashScreen } from '@/features/auth';
 
-export default function SplashScreen() {
-  return <ScreenPlaceholder title="Splash" figmaSection="Login & Onboarding" />;
+export default function Splash() {
+  return <SplashScreen />;
 }

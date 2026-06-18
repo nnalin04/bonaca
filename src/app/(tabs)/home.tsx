@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { HomeScreen } from '@/features/home';
 
-export default function HomeScreen() {
-  return <ScreenPlaceholder title="Home" figmaSection="Home - Primary / Home - Secondary" />;
+export default function Home() {
+  return <HomeScreen />;
 }
