@@ -28,6 +28,12 @@ export const Colors = {
   error: '#d63d3d',
   avatarPlaceholderBg: '#e9e9e9',
   avatarPlaceholderFg: '#007367',
+  // Select Wearable Account / Payment Gateway additions (Figma nodes 197:10387, 197:11178, 222:1723, 225:3615, 197:10384, 197:11043)
+  rowBorder: '#e6e5e5',
+  errorBackground: '#f6e7e7',
+  errorBorder: '#d63d3d',
+  errorText: '#d63d3d',
+  link: '#575fb4',
 } as const;
 
 export const Radii = {
@@ -37,6 +43,8 @@ export const Radii = {
   cta: 8,
   cardTop: 48,
   button: 12,
+  row: 12,
+  toast: 8,
 } as const;
 
 export const Fonts = {

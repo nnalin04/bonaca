@@ -1,78 +1,65 @@
-import { IconLock } from '@tabler/icons-react-native';
+import { IconChevronLeft, IconCreditCardPay } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PaymentMethodOption } from '@/features/subscription/components/PaymentMethodOption';
-import { PlanSummaryCard } from '@/features/subscription/components/PlanSummaryCard';
-import { SubscriptionFlowHeader } from '@/features/subscription/components/SubscriptionFlowHeader';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
-import type { PaymentMethod } from '@/types';
 
-// Payment methods per docs/PRD.md §4 "Connecting a Wearable" / §3.6 subscription lifecycle:
-// UPI, PayPal, American Express, Mastercard, Apple Pay — international cards + Apple Pay are
-// live from day one (NRI-diaspora segment), UPI covers the India-resident segment.
-const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: 'pm-upi', type: 'upi', label: 'UPI', detail: 'Pay directly via any UPI app' },
-  { id: 'pm-paypal', type: 'paypal', label: 'PayPal', detail: 'Pay using your PayPal balance or card' },
-  { id: 'pm-amex', type: 'amex', label: 'American Express', detail: 'Ending in 4242' },
-  { id: 'pm-mastercard', type: 'mastercard', label: 'Mastercard', detail: 'Ending in 4242' },
-  { id: 'pm-apple-pay', type: 'apple-pay', label: 'Apple Pay', detail: 'Use Face ID to pay' },
-];
+export type PaymentGatewayVariant = 'trial-signup' | 'renewal';
 
-export function PaymentGatewayScreen() {
+interface PaymentGatewayScreenProps {
+  variant?: PaymentGatewayVariant;
+}
+
+const copyByVariant: Record<PaymentGatewayVariant, { title: string; body: string; cta: string }> = {
+  'trial-signup': {
+    title: 'Payment Gateway',
+    body: 'Add a payment method to keep monitoring active after your free trial ends.',
+    cta: 'Add Payment Method',
+  },
+  renewal: {
+    title: 'Payment Gateway',
+    body: 'Renew your subscription to keep monitoring all your connected family members.',
+    cta: 'Renew Subscription',
+  },
+};
+
+export function PaymentGatewayScreen({ variant = 'trial-signup' }: PaymentGatewayScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedMethodId, setSelectedMethodId] = useState<string>(PAYMENT_METHODS[0].id);
-
-  const handlePay = () => {
-    // Payments are not implemented yet (RevenueCat + StoreKit/Play Billing/Razorpay are
-    // decided-but-not-built per docs/TECHNICAL_REQUIREMENTS.md). This is a UI-only stub —
-    // no charge is made, no SDK is called. Navigate back to Home as a stand-in for a
-    // successful-subscription confirmation.
-    router.replace('/(tabs)/home');
-  };
+  const copy = copyByVariant[variant];
 
   return (
     <View style={styles.screen}>
-      <SubscriptionFlowHeader title="Payment Gateway" onPressBack={() => router.back()} />
-
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}>
-        <PlanSummaryCard
-          planName="Bonaca Family Plan"
-          priceLabel="₹499/mo"
-          billingCycleLabel="Billed monthly · cancel anytime"
-        />
-
-        <Text style={styles.sectionTitle}>Choose payment method</Text>
-
-        <View style={styles.list}>
-          {PAYMENT_METHODS.map((method) => (
-            <PaymentMethodOption
-              key={method.id}
-              method={method}
-              selected={selectedMethodId === method.id}
-              onPress={() => setSelectedMethodId(method.id)}
-            />
-          ))}
-        </View>
-
-        <View style={styles.secureNotice}>
-          <IconLock size={14} color={Colors.textSecondary} strokeWidth={1.75} />
-          <Text style={styles.secureNoticeText}>Payments are encrypted and securely processed</Text>
-        </View>
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <Pressable
-          style={({ pressed }) => [styles.payButton, pressed && styles.payButtonPressed]}
-          onPress={handlePay}
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Pay and subscribe">
-          <Text style={styles.payButtonText}>Pay & Subscribe</Text>
+          accessibilityLabel="Go back">
+          <IconChevronLeft size={24} color={Colors.textPrimary} strokeWidth={2} />
+        </Pressable>
+      </View>
+
+      <View style={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
+        <Text style={styles.title}>{copy.title}</Text>
+        <IconCreditCardPay size={64} color={Colors.iconMuted} strokeWidth={1.5} />
+        <Text style={styles.body}>{copy.body}</Text>
+        <Text style={styles.note}>
+          Payment processing (UPI, PayPal, American Express, Mastercard, Apple Pay) isn&rsquo;t
+          wired up yet — this is a placeholder until the payment-method picker is built.
+        </Text>
+
+        <Pressable
+          style={styles.cta}
+          onPress={() => {
+            // Stub: payment processing is not implemented yet (see CLAUDE.md Tech Stack).
+            // Wiring to RevenueCat / StoreKit / Razorpay is a separate, explicitly-scoped task.
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={copy.cta}>
+          <Text style={styles.ctaLabel}>{copy.cta}</Text>
         </Pressable>
       </View>
     </View>
@@ -84,57 +71,58 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
+  topBar: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    gap: 16,
+    paddingBottom: 8,
   },
-  sectionTitle: {
-    fontFamily: Fonts.family,
-    fontWeight: '500',
-    fontSize: 16,
-    lineHeight: 22,
-    color: Colors.textPrimary,
-  },
-  list: {
-    gap: 10,
-  },
-  secureNotice: {
-    flexDirection: 'row',
+  backButton: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginTop: 4,
   },
-  secureNoticeText: {
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 16,
+  },
+  title: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 18,
     color: Colors.textSecondary,
   },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: Colors.background,
-    borderTopWidth: 1,
-    borderTopColor: Colors.cardBorder,
+  body: {
+    fontFamily: Fonts.family,
+    fontWeight: '500',
+    fontSize: 18,
+    lineHeight: 24,
+    color: Colors.textPrimary,
+    textAlign: 'center',
   },
-  payButton: {
-    height: 52,
-    borderRadius: Radii.pill,
+  note: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  cta: {
+    marginTop: 16,
+    height: 56,
+    width: '100%',
+    borderRadius: Radii.row,
     backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  payButtonPressed: {
-    opacity: 0.85,
-  },
-  payButtonText: {
+  ctaLabel: {
     fontFamily: Fonts.family,
-    fontWeight: '600',
-    fontSize: 16,
-    lineHeight: 22,
+    fontWeight: '500',
+    fontSize: 18,
     color: Colors.white,
   },
 });

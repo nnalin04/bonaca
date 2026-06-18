@@ -22,7 +22,9 @@ export type WearableProvider =
   | 'apple-health'
   | 'health-connect'
   | 'fitbit'
-  | 'garmin';
+  | 'garmin'
+  | 'samsung-health'
+  | 'oura';
 export type WearableConnectionStatus =
   | 'connected'
   | 'disconnected'
