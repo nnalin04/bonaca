@@ -1,5 +1,5 @@
-import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { NotificationsScreen } from '@/features/notifications';
 
-export default function NotificationsScreen() {
-  return <ScreenPlaceholder title="Notifications" figmaSection="Notifications" />;
+export default function Notifications() {
+  return <NotificationsScreen />;
 }
