@@ -5,7 +5,15 @@
 **App screenshot:** /tmp/bonaca-audit/13-metric-details.png
 
 ## Verdict
-Needs fixes — header/tabs/date-stepper/summary card are pixel-exact, but the bar chart itself is missing 3 precisely-identifiable details (background tint, dashed gridlines, real axis-label values) that earlier passes only estimated qualitatively. Now confirmed with exact values.
+✅ **FIXED** — all 3 bar-chart gaps resolved and re-verified visually against Figma; now a near-pixel-perfect match.
+
+## ✅ FIX APPLIED
+- Added a full-size background `Rect` (`Colors.chartAreaFill`, the token that already existed) behind the chart in `BarChartCard.tsx`.
+- Added 2 dashed vertical gridlines (`strokeDasharray="4,4"`) at the 1/3 and 2/3 width marks, aligning with the 6AM/12PM x-axis labels.
+- Fixed bar corner radius from `rx={3}` to `rx={5}` (Figma's actual value).
+- Added `chartAxisMin`/`chartAxisMax` to `MetricDetailSummary` (`metrics/mockData.ts`) as a fixed display-scale override, distinct from `rangeMin`/`rangeMax` (which stay correct for the "Highest:/Lowest:" summary-card text). Set to `75`/`180` for Heart Rate per Figma; `MetricDetailsScreen.tsx` now prefers this over the computed data range for the chart's Y-axis labels only.
+
+Re-verified in the simulator and compared side-by-side against `.design-reference/screens/metric-details__197-3828.png` — pink tint, dashed lines, and "180 bpm"/"75 bpm" labels all now present and matching.
 
 ## Two Figma frames, two different chart styles — which is "correct"?
 `197:3828` renders the metric as a **bar chart** (discrete rectangles per data point). `197:3909` renders the *same* data (identical date, average, highest/lowest) as a **smooth line chart with circular point markers**. Both are cached as real, fully-detailed frames — this isn't one being a stub and one real; they're two distinct visual treatments of the same screen, most likely a design exploration where both got left in the file rather than one being deleted. The implementation chose the bar-chart treatment, which is a legitimate, fully-supported choice (matches `197:3828` closely once the gaps below are fixed) — flagging this only so it's clear the choice was deliberate-compatible, not a guess.

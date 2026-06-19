@@ -74,8 +74,8 @@ export function MetricDetailsScreen({
 
         <BarChartCard
           values={summary.chartValues}
-          maxLabel={`${summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
-          minLabel={`${summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
+          maxLabel={`${summary.chartAxisMax ?? summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
+          minLabel={`${summary.chartAxisMin ?? summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
           xAxisLabels={xAxisLabelsByRange[range]}
         />
 

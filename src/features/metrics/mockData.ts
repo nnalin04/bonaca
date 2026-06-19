@@ -8,6 +8,9 @@ import type { Insight, MetricReading, MetricType } from '@/types';
 export interface MetricDetailSummary {
   average: MetricReading;
   chartValues: number[];
+  /** Fixed display scale for the chart's Y-axis labels, per Figma (e.g. Heart Rate shows a rounded "180 bpm"/"75 bpm" scale, not the literal data min/max). Falls back to average.rangeMin/rangeMax when unset. */
+  chartAxisMin?: number;
+  chartAxisMax?: number;
 }
 
 const now = new Date().toISOString();
@@ -47,6 +50,8 @@ export const metricDetailSummaries: Record<MetricType, MetricDetailSummary> = {
   heart_rate: {
     average: reading('heart_rate', 120, 'bpm', 78, 148),
     chartValues: heartRateChart,
+    chartAxisMin: 75,
+    chartAxisMax: 180,
   },
   heart_rate_variability: {
     average: reading('heart_rate_variability', 52, 'ms', 38, 66),

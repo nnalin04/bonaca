@@ -26,11 +26,14 @@ export function BarChartCard({
   const startX = Math.max(0, (CHART_WIDTH - totalBarSpan) / 2);
   const gridLineYs = [0, 0.25, 0.5, 0.75, 1].map((t) => t * CHART_HEIGHT);
 
+  const verticalGridXs = [CHART_WIDTH / 3, (CHART_WIDTH * 2) / 3];
+
   return (
     <View style={styles.card}>
       <Text style={styles.maxLabel}>{maxLabel}</Text>
 
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT} style={styles.chart}>
+        <Rect x={0} y={0} width={CHART_WIDTH} height={CHART_HEIGHT} fill={Colors.chartAreaFill} />
         {gridLineYs.map((y) => (
           <Line
             key={y}
@@ -40,6 +43,18 @@ export function BarChartCard({
             y2={y}
             stroke={Colors.cardBorder}
             strokeWidth={1}
+          />
+        ))}
+        {verticalGridXs.map((x) => (
+          <Line
+            key={x}
+            x1={x}
+            y1={0}
+            x2={x}
+            y2={CHART_HEIGHT}
+            stroke={Colors.cardBorder}
+            strokeWidth={1}
+            strokeDasharray="4,4"
           />
         ))}
         {values.map((value, index) => {
@@ -53,7 +68,7 @@ export function BarChartCard({
               y={y}
               width={BAR_WIDTH}
               height={barHeight}
-              rx={3}
+              rx={5}
               fill={Colors.chartLine}
             />
           );
