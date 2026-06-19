@@ -12,6 +12,7 @@ import { MetricCard } from '@/features/members/components/MetricCard';
 import { MetricCardRow } from '@/features/members/components/MetricCardRow';
 import { MiniSparkline } from '@/features/members/components/MiniSparkline';
 import { SleepWeekBars } from '@/features/members/components/SleepWeekBars';
+import { SelectModal } from '@/features/onboarding/components/SelectModal';
 import {
   activityReadings,
   behaviourReadings,
@@ -37,10 +38,23 @@ const tabTitles: Record<MemberDetailsTab, string> = {
   behaviour: 'Behaviour',
 };
 
+/** X-axis labels for chart-style metric cards, per Figma (196:4233). Only metrics with a confirmed Figma reference get labels. */
+const sparklineAxisLabels: Partial<Record<MetricReading['metricType'], string[]>> = {
+  heart_rate: ['6AM', '12PM', '6PM', '12AM'],
+  heart_rate_variability: ['1W', '2W', '3W', '4W'],
+};
+
 export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<MemberDetailsTab>('vitals');
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  const menuOptions = [
+    mockMember.pinned ? 'Unpin from top' : 'Pin to top',
+    'Edit Nick Name',
+    'Hidden Members',
+  ];
 
   // memberId isn't yet wired to a real data source — mock data always represents the same
   // "Dad" member from the Figma design until a backend exists (see CLAUDE.md "Not Set Up Yet").
@@ -58,10 +72,11 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
       <MetricCard
         key={reading.id}
         icon={config.icon}
+        iconColor={config.iconColor}
         label={config.label}
         value={config.formatValue(reading.value)}
         unitSuffix={config.unitSuffix}
-        trendText={formatTrendLabel(reading.trendLabel)}
+        trendText={reading.customCaption ?? formatTrendLabel(reading.trendLabel)}
         width={width}
         onPress={() => goToMetric(reading)}
       />
@@ -75,6 +90,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
       <MetricCard
         key={reading.id}
         icon={config.icon}
+        iconColor={config.iconColor}
         label={config.label}
         value={config.formatValue(reading.value)}
         unitSuffix={config.unitSuffix}
@@ -84,6 +100,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
           points ? (
             <MiniSparkline
               points={points}
+              xAxisLabels={sparklineAxisLabels[reading.metricType]}
               lineColor={
                 reading.metricType === 'heart_rate_variability'
                   ? Colors.chartLineSecondary
@@ -129,6 +146,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         </MetricCardRow>
         <MetricCard
           icon={sleepConfig.icon}
+          iconColor={sleepConfig.iconColor}
           label={sleepConfig.label}
           value={sleepConfig.formatValue(sleep.value)}
           trendText={formatTrendLabel(sleep.trendLabel)}
@@ -199,6 +217,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         displayName={mockMember.nickname ?? mockMember.name}
         statusMessage={mockMember.statusMessage}
         onPressBack={() => router.back()}
+        onPressMenu={() => setMenuVisible(true)}
       />
 
       <View style={styles.tabBarWrap}>
@@ -217,6 +236,14 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         {activeTab === 'activity' && renderActivityTab()}
         {activeTab === 'behaviour' && renderBehaviourTab()}
       </ScrollView>
+
+      <SelectModal
+        visible={menuVisible}
+        title="Member Options"
+        options={menuOptions}
+        onSelect={() => {}}
+        onClose={() => setMenuVisible(false)}
+      />
     </View>
   );
 }

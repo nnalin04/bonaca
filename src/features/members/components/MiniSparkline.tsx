@@ -1,6 +1,7 @@
 import Svg, { Path, Polygon } from 'react-native-svg';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors } from '@/theme/tokens';
+import { Colors, Fonts } from '@/theme/tokens';
 
 interface MiniSparklineProps {
   /** Normalized 0–1 points describing the trend line, left to right. */
@@ -9,6 +10,8 @@ interface MiniSparklineProps {
   height?: number;
   lineColor?: string;
   areaColor?: string;
+  /** Optional labels rendered evenly spaced under the chart, e.g. ['6AM', '12PM', '6PM', '12AM']. */
+  xAxisLabels?: string[];
 }
 
 /** Lightweight area sparkline used on chart-style metric cards (Heart Rate, HRV, VO2 Max). */
@@ -18,6 +21,7 @@ export function MiniSparkline({
   height = 54,
   lineColor = Colors.chartLine,
   areaColor = Colors.chartAreaFill,
+  xAxisLabels,
 }: MiniSparklineProps) {
   if (points.length < 2) return null;
 
@@ -37,16 +41,41 @@ export function MiniSparkline({
   ].join(' ');
 
   return (
-    <Svg width={width} height={height}>
-      <Polygon points={areaPoints} fill={areaColor} />
-      <Path
-        d={linePath}
-        stroke={lineColor}
-        strokeWidth={2}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <View>
+      <Svg width={width} height={height}>
+        <Polygon points={areaPoints} fill={areaColor} />
+        <Path
+          d={linePath}
+          stroke={lineColor}
+          strokeWidth={2}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+      {xAxisLabels ? (
+        <View style={[styles.axisRow, { width }]}>
+          {xAxisLabels.map((label) => (
+            <Text key={label} style={styles.axisLabel}>
+              {label}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  axisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  axisLabel: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 10,
+    color: Colors.textSecondary,
+  },
+});

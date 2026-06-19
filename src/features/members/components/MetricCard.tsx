@@ -6,6 +6,7 @@ import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface MetricCardProps {
   icon: Icon;
+  iconColor: string;
   label: string;
   value: string;
   unitSuffix?: string;
@@ -19,6 +20,7 @@ interface MetricCardProps {
 
 export function MetricCard({
   icon: MetricIcon,
+  iconColor,
   label,
   value,
   unitSuffix,
@@ -34,7 +36,7 @@ export function MetricCard({
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={label}>
       <View style={styles.iconCircle}>
-        <MetricIcon size={24} color={Colors.accent} strokeWidth={1.75} />
+        <MetricIcon size={24} color={iconColor} strokeWidth={1.75} />
       </View>
       <Text style={styles.label}>{label}</Text>
 
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.tabBarTrack,
+    backgroundColor: Colors.metricIconBackground,
     alignItems: 'center',
     justifyContent: 'center',
   },

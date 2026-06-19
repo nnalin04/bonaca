@@ -5,7 +5,7 @@
 **App screenshots:** /tmp/bonaca-audit/10-member-details-vitals.png, 11-member-details-activity.png, 12-member-details-behaviour.png (viewport-only — these screens scroll; content below the fold wasn't captured live, but Vitals' full content was already cross-checked against JSON in an earlier pass this session)
 
 ## Verdict
-Needs fixes — found a systematic, screen-wide icon-coloring bug affecting all 18 metric cards across all 3 tabs, plus a real header control (3-dot menu) that's present in Figma but was previously assumed out of scope, plus one custom caption-text mismatch.
+✅ **FIXED** — all 4 findings below resolved and re-verified visually against Figma across all 3 tabs.
 
 ## Which member-details__* variant maps to which tab/state?
 Independently investigated by grepping every cached `member-details__*.json` for tab-specific text:
@@ -16,7 +16,23 @@ Independently investigated by grepping every cached `member-details__*.json` for
 
 This means the Activity and Behaviour tabs **do** have real, dedicated Figma references that were never checked against until now — see the systematic icon bug below, found by comparing against them directly.
 
-## 🔴 Systematic bug: every metric card icon is hardcoded purple instead of per-metric colored
+## ✅ FIX APPLIED: per-metric icon colors
+
+Added `iconColor` to every entry in `metricDisplayConfig` (`metricDisplay.ts`), with exact hex values extracted from Figma for all 18 metrics (the 9 in the table below plus Stress `#6bae92`, Temperature `#bbbbbb`, ECG `#e07a5f`, Blood Glucose `#8b6f9c`, VO2 Max `#d4a24c`, Routine `#5b8def`, Screen Time `#e07a5f`, Outdoor Time `#3a7f7c`, Last Active Location `#5e5a8a`). `MetricCard.tsx` now takes an `iconColor` prop instead of hardcoding `Colors.accent`, and the icon-circle background now uses a new `Colors.metricIconBackground` (`#f5f5f5`) token instead of the blue-tinted `tabBarTrack`. `MemberDetailsScreen.tsx` passes `config.iconColor` through at all 3 call sites (`renderReading`, `renderChartReading`, and the inline Sleep card). Re-verified in the simulator across all 3 tabs — every icon now matches Figma's color exactly.
+
+## ✅ FIX APPLIED: header 3-dot menu
+
+`MemberDetailsHeader.tsx` already had an `onPressMenu` prop built but never wired up. Connected it in `MemberDetailsScreen.tsx` to open a `SelectModal` (reused from the onboarding feature) with "Pin to top"/"Unpin from top" (toggling on `mockMember.pinned`), "Edit Nick Name", and "Hidden Members" as stub options — consistent with how other not-yet-built destinations are stubbed elsewhere in the app. Verified the icon renders in the header and the menu opens correctly.
+
+## ✅ FIX APPLIED: sparkline x-axis labels
+
+`MiniSparkline.tsx` now accepts an optional `xAxisLabels` prop, rendering evenly-spaced labels under the chart. Wired for Heart Rate (`6AM/12PM/6PM/12AM`) and HRV (`1W/2W/3W/4W`) in `MemberDetailsScreen.tsx`, the two metrics with confirmed Figma label text. Re-verified visually — labels now appear under both charts.
+
+## ✅ FIX APPLIED: Training Load custom caption
+
+Added an optional `customCaption?: string` field to `MetricReading` (`src/types/index.ts`) to handle captions the 3-value trend enum can't represent. Set to `"Within optimal range"` for the Training Load mock reading; `MemberDetailsScreen.tsx`'s `renderReading` now prefers `reading.customCaption` over the computed trend label when present. Re-verified — the Activity tab now shows the correct caption.
+
+## 🔴 Systematic bug: every metric card icon is hardcoded purple instead of per-metric colored (ORIGINAL FINDING, NOW FIXED — kept for history)
 `MetricCard.tsx:37` hardcodes `color={Colors.accent}` for every single card's icon, and `iconCircle` (`MetricCard.tsx:75`) hardcodes `backgroundColor: Colors.tabBarTrack` (`#f0f3ff`, a light blue-lavender) for every card too. Checked against Figma JSON across all 3 tabs — **every icon background circle is actually a neutral light gray `#f5f5f5`** (not blue-tinted), and **every icon's glyph color is metric-specific**, not purple:
 
 | Metric | Figma icon color | Figma icon bg |

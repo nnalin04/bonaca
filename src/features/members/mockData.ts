@@ -160,6 +160,7 @@ export const activityReadings: MetricReading[] = [
     recordedAt: now,
     sourceDeviceId: 'device-mock',
     trendLabel: 'same_as_usual',
+    customCaption: 'Within optimal range',
   },
 ];
 

@@ -77,6 +77,8 @@ export interface MetricReading {
   sourceDeviceId: string;
   /** Comparison-to-baseline caption shown on metric cards, e.g. "Higher than usual". */
   trendLabel?: MetricTrendLabel;
+  /** Overrides the trendLabel caption with custom text when the generic vocabulary doesn't fit (e.g. "Within optimal range" for Training Load). */
+  customCaption?: string;
   /** Lowest reading in the displayed range, for chart-card min/max captions (e.g. "Lowest: 78 bpm"). */
   rangeMin?: number;
   /** Highest reading in the displayed range, for chart-card min/max captions (e.g. "Highest: 148 bpm"). */
