@@ -1,6 +1,6 @@
 import { IconUserFilled } from '@tabler/icons-react-native';
 import { Image, type ImageSource } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
@@ -9,11 +9,22 @@ interface NotificationRowProps {
   title: string;
   body: string;
   displayTime: string;
+  onPress?: () => void;
 }
 
-export function NotificationRow({ avatarSource, title, body, displayTime }: NotificationRowProps) {
+export function NotificationRow({
+  avatarSource,
+  title,
+  body,
+  displayTime,
+  onPress,
+}: NotificationRowProps) {
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${title}: ${body}`}>
       {avatarSource ? (
         <Image source={avatarSource} style={styles.avatar} contentFit="cover" />
       ) : (
@@ -33,7 +44,7 @@ export function NotificationRow({ avatarSource, title, body, displayTime }: Noti
           {body}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

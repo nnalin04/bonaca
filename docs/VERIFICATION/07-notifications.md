@@ -5,7 +5,10 @@
 **App screenshot:** /tmp/bonaca-audit/07-notifications.png
 
 ## Verdict
-Pass — every checked value is an exact or near-exact (sub-pixel/sub-unit) match. One trivial 1-unit color-token inconsistency found.
+✅ **FIXED** (rows now tappable) — pixel fidelity was already exact; the one functional gap is resolved below. The 1-unit color-token inconsistency is cosmetic and left as-is (not worth a token migration for an imperceptible difference).
+
+## ✅ FIX APPLIED: notification rows are now tappable
+`NotificationRow.tsx` is now a `Pressable` with an `onPress` prop (and a combined `accessibilityLabel` covering title+body, fixing the separate accessibility-grouping note below too). `NotificationsScreen.tsx` wires each row to `router.push(notification.deepLinkTarget as Href)` — the mock data already had real `deepLinkTarget` values (`/subscription/payment-gateway`, `/member/member-dad/metric/heart_rate`) that were simply never read. Verified the screen still renders identically (no visual regression from the View→Pressable change).
 
 ## Pixel-level discrepancies
 | # | Element | Figma value | Implementation value | Severity | Notes |

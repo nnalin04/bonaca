@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -82,6 +82,7 @@ export function NotificationsScreen() {
               title={notification.title}
               body={notification.body}
               displayTime={notification.displayTime}
+              onPress={() => router.push(notification.deepLinkTarget as Href)}
             />
           ))
         )}
