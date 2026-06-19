@@ -5,12 +5,15 @@
 **App screenshot:** /tmp/bonaca-audit/05-connect-wearable.png
 
 ## Verdict
-Pass with minor issues — pixel-perfect layout/colors, one small copy-casing typo, and a known/already-documented product conflict (not a code bug).
+✅ **FIXED** — casing typo corrected and re-verified; tagline line-break left as-is (cosmetic, current single-line wrap looks clean); the Phase 2 vendor conflict remains an open product flag, not a code bug.
 
-## Pixel-level discrepancies
+## ✅ FIX APPLIED
+"Skip For Now" → "Skip for Now" (both the rendered `Text` and the explanatory code comment). Re-verified in the simulator.
+
+## Pixel-level discrepancies (historical)
 | # | Element | Figma value | Implementation value | Severity | Notes |
 |---|---|---|---|---|---|
-| 1 | "Skip For Now" link copy | `'Skip for Now'` (lowercase "for") | `'Skip For Now'` (capital "For") | low | Confirmed via the Figma JSON's literal `characters` value. Trivial casing typo, easy one-line fix. |
+| 1 | "Skip For Now" link copy | `'Skip for Now'` (lowercase "for") | `'Skip For Now'` (capital "For") | low | ✅ Fixed — see above. |
 | 2 | Tagline line break | Figma forces a line break after "health": `"Link a wearable account to track health \nand activity"` (two lines) | One unbroken string, wraps naturally based on container width | low | At the implemented font size/container width the text happens to fit on one line in the live screenshot, which arguably looks cleaner than Figma's forced break — flagging for awareness, not recommending a change. |
 
 ## ⚠ Product/design conflict: Phase 2 vendors in a Phase 1 screen

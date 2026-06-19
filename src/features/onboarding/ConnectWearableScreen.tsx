@@ -30,7 +30,7 @@ export function ConnectWearableScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // Figma 60:634 ships with the "Continue" CTA hidden (visible: false in the source) —
-  // only "Skip For Now" shows until a wearable has actually been linked. No "connected"
+  // only "Skip for Now" shows until a wearable has actually been linked. No "connected"
   // state screenshot was cached, so we approximate: selecting any option reveals Continue.
   const [hasSelection, setHasSelection] = useState(false);
 
@@ -59,7 +59,7 @@ export function ConnectWearableScreen() {
         <View style={styles.ctaBlock}>
           {hasSelection && <PrimaryButton label="Continue" onPress={goToHome} />}
           <Pressable onPress={goToHome} accessibilityRole="button" accessibilityLabel="Skip for now">
-            <Text style={styles.skipLink}>Skip For Now</Text>
+            <Text style={styles.skipLink}>Skip for Now</Text>
           </Pressable>
         </View>
       </ScrollView>
