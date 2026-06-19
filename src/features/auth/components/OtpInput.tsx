@@ -55,11 +55,11 @@ export function OtpInput({ value, onChange, hasError }: OtpInputProps) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    justifyContent: 'center',
+    gap: 28,
   },
   box: {
-    flex: 1,
+    width: 56,
     height: 56,
     borderRadius: 8,
     borderWidth: 1.5,

@@ -5,7 +5,11 @@
 **App screenshot:** /tmp/bonaca-audit/03-otp-default.png (default state only — error/resend confirmed via Figma JSON + code-path reading, not a live tap)
 
 ## Verdict
-Pass with minor issues — one real, fixable bug (bold/wrong-color phone number) and one spacing discrepancy in the OTP boxes; everything else (including both secondary states) matches exactly.
+✅ **FIXED** — both issues resolved and re-verified visually.
+
+## ✅ FIX APPLIED
+- `subtitleStrong` style: `fontWeight` changed from `'700'` to `'500'`, color changed from `Colors.textSecondary` to `Colors.textPrimary`, matching Figma's `styleOverrideTable` exactly.
+- `OtpInput.tsx`: boxes changed from `flex: 1` (stretching to fill the row, capping the achievable gap regardless of the `gap` value) to a fixed `width: 56`, and the row's `justifyContent` changed from `'space-between'` to `'center'`. With `gap: 28`, this reproduces Figma's exact box positions — confirmed via the Figma bbox math: 4×56 + 3×28 = 308px total span, centered within the 358px content area leaves 25px each side, plus the screen's 16px padding = 41px from the frame edge, matching Figma's measured `41px` margin exactly.
 
 ## Default state — pixel-level discrepancies
 | # | Element | Figma value | Implementation value | Severity | Notes |

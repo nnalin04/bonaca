@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   subtitleStrong: {
-    fontWeight: '700',
-    color: Colors.textSecondary,
+    fontWeight: '500',
+    color: Colors.textPrimary,
   },
   statusText: {
     fontFamily: Fonts.family,
