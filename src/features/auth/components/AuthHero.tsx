@@ -13,9 +13,9 @@ export function AuthHero({ tagline, height }: AuthHeroProps) {
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
+      locations={[0, 0.95]}
+      start={{ x: 0.97, y: -0.43 }}
+      end={{ x: 0.21, y: 1.21 }}
       style={[styles.hero, { height }]}>
       <Image
         source={require('../../../../assets/images/brand/bonaca-mark.png')}

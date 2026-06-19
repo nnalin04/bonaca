@@ -5,7 +5,14 @@
 **App screenshot:** /tmp/bonaca-audit/02-login.png
 
 ## Verdict
-Pass with minor issues — layout, copy, colors and component structure closely track Figma; the deviations found are sub-pixel color drift, a non-bottom-anchored CTA-block layout strategy that differs structurally from Figma's fixed-gap spec, and missing interactivity/accessibility on the country-code control.
+✅ **Color drift + gradient angle FIXED** — the remaining medium items (CTA-block layout strategy, country-code interactivity, keyboard-avoidance tuning) are deliberately left as-is for now; they're structural/UX scope beyond a pixel-precision pass, not pixel bugs.
+
+## ✅ FIX APPLIED
+- `Colors.inputBorder`: `#e3e4e6` → `#e3e5e5` (also shared by OTP's digit boxes — improves both).
+- `Colors.placeholderText`: `#727779` → `#72777a` (also shared by Complete Profile's fields — improves both).
+- `AuthHero.tsx` gradient: same fix as Splash — replaced approximated `start`/`end`/`locations` with Figma's actual `gradientHandlePositions`-derived values. `AuthHero` is only used by Login, so this was safe to fix without affecting other screens.
+
+Re-verified Login, OTP, and Complete Profile in the simulator after this shared-token change — no regressions, all three look correct.
 
 ## Pixel-level discrepancies
 | # | Element | Figma value | Implementation value | Severity (low/med/high) | Notes |

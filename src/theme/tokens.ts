@@ -22,9 +22,9 @@ export const Colors = {
   chartAreaFillSecondary: 'rgba(58, 127, 124, 0.1)',
   insightCardBackground: 'rgba(213, 213, 81, 0.1)',
   // Login & Onboarding additions (Figma nodes 43:3178, 49:268, 49:364, 60:595, 60:634)
-  inputBorder: '#e3e4e6',
+  inputBorder: '#e3e5e5',
   inputBorderSubtle: '#ebebeb',
-  placeholderText: '#727779',
+  placeholderText: '#72777a',
   error: '#d63d3d',
   avatarPlaceholderBg: '#e9e9e9',
   avatarPlaceholderFg: '#007367',
