@@ -34,6 +34,9 @@ export const Colors = {
   errorBorder: '#d63d3d',
   errorText: '#d63d3d',
   link: '#575fb4',
+  // Profile wearable-connect card additions (Figma node 39:2025)
+  wearableCardBackground: '#101010',
+  wearableCardIconBackground: '#1c1d2b',
 } as const;
 
 export const Radii = {

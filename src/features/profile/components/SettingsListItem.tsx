@@ -21,8 +21,6 @@ export function SettingsListItem({
   label,
   onPress,
 }: SettingsListItemProps) {
-  const labelColor = Colors.textSecondary;
-
   return (
     <Pressable
       style={styles.row}
@@ -30,8 +28,8 @@ export function SettingsListItem({
       accessibilityRole="button"
       accessibilityLabel={label}>
       <View style={styles.leading}>
-        <Icon size={24} color={labelColor} strokeWidth={1.75} />
-        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+        <Icon size={24} color={Colors.accent} strokeWidth={1.75} />
+        <Text style={styles.label}>{label}</Text>
       </View>
       <IconChevronRight size={24} color={Colors.textSecondary} strokeWidth={1.75} />
     </Pressable>
@@ -54,8 +52,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: Fonts.family,
-    fontWeight: '400',
+    fontWeight: '500',
     fontSize: 14,
     lineHeight: 20,
+    color: Colors.textSecondary,
   },
 });
