@@ -5,7 +5,11 @@
 **App screenshot:** /tmp/bonaca-audit/01-splash.png
 
 ## Verdict
-Pass with minor issues
+✅ **FIXED** — both flagged issues resolved and re-verified visually against the Figma reference.
+
+## ✅ FIX APPLIED
+- Gradient: replaced the approximated `start`/`end`/`locations` with values derived from Figma's actual `gradientHandlePositions` (`start: {x:0.97,y:-0.43}`, `end: {x:0.21,y:1.21}`, `locations:[0,0.95]`) — produces a visibly steeper, more diagonal sweep matching the reference.
+- Added `<StatusBar style="light" />` from `expo-status-bar` (already a dependency, just unused) — the status bar clock/icons now render in white against the dark gradient top instead of the default dark style.
 
 ## Pixel-level discrepancies
 | # | Element | Figma value | Implementation value | Severity (low/med/high) | Notes |

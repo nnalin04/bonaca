@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -22,10 +23,11 @@ export function SplashScreen() {
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
+      locations={[0, 0.95]}
+      start={{ x: 0.97, y: -0.43 }}
+      end={{ x: 0.21, y: 1.21 }}
       style={styles.screen}>
+      <StatusBar style="light" />
       <View style={styles.content}>
         <Image
           source={require('../../../assets/images/brand/bonaca-mark.png')}
