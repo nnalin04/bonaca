@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   message: {
     fontFamily: Fonts.family,
     fontWeight: '500',
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.errorText,
   },
 });

@@ -5,7 +5,10 @@
 **App screenshots:** /tmp/bonaca-audit/14-select-wearable-initial.png, 15-select-wearable-midflow.png, 16-select-wearable-retry.png
 
 ## Verdict
-Pass with minor issues — layout, colors, and the real brand logos are all pixel-exact across all 3 variants; one font-size mismatch found on the retry toast.
+✅ **FIXED** — toast font size corrected and re-verified; layout/colors/logos were already pixel-exact across all 3 variants.
+
+## ✅ FIX APPLIED
+`ConnectionErrorToast.tsx`'s `message` style: `fontSize` changed from `14` to `16`, matching Figma. Re-verified on the retry variant in the simulator.
 
 ## Initial variant — pixel-level discrepancies
 None found — exact match to `197:10387`, including the correctly-absent back chevron.
