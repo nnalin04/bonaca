@@ -2,27 +2,27 @@
 
 Pixel-level + code-quality audit of all 12 built screens against the real Figma design (`.design-reference/`), done screen-by-screen with exact hex/fontSize/fontWeight cross-checks from the Figma JSON, not just visual eyeballing. Individual reports: `docs/VERIFICATION/01-splash.md` through `12-payment-gateway.md`.
 
-**This is a findings document only — nothing has been fixed yet.** Per the review process, this should be read and confirmed/reprioritized before any code changes are made.
+**✅ All 10 screens with findings have been fixed, one at a time, each re-verified visually against its Figma reference before moving to the next.** Home and Payment Gateway needed no fixes. See each screen's report for its "✅ FIX APPLIED" section. The original findings are kept inline (not deleted) for history.
 
 ## How this was produced
 12 screens were audited. 2 (Splash, Login) were done by parallel subagents before a session usage limit cut the rest off; the remaining 10 were done directly, same methodology: live simulator screenshot + Figma reference screenshot + raw Figma JSON (exact `r/g/b` fills converted to hex, `fontSize`/`fontWeight`/`absoluteBoundingBox`) cross-referenced against the actual React Native style values in source.
 
-## Verdicts at a glance
+## Verdicts at a glance (post-fix)
 
-| # | Screen | Verdict | High | Medium | Low |
-|---|---|---|---|---|---|
-| 1 | Splash | Pass with minor issues | 0 | 2 | 3 |
-| 2 | Login | Pass with minor issues | 0 | 1 | 5 |
-| 3 | OTP (all states) | Pass with minor issues | 0 | 2 | 3 |
-| 4 | Complete Profile | **Needs fixes** | **1 (functional dead-end)** | 0 | 4 |
-| 5 | Connect Wearable (onboarding) | Pass with minor issues | 0 | 0 | 4 (+ 1 product/design conflict) |
-| 6 | Home | **Pass — no issues** | 0 | 0 | 4 |
-| 7 | Notifications | Pass with minor issues | 0 | 1 | 2 |
-| 8 | Profile (Primary + Secondary) | **Needs fixes** | 0 | 6 | 3 |
-| 9 | Member Details (3 tabs) | **Needs fixes** | **2 (systematic)** | 5 | 0 |
-| 10 | Metric Details | **Needs fixes** | 0 | 3 | 2 |
-| 11 | Select Wearable Account (3 variants) | Pass with minor issues | 0 | 1 | 0 |
-| 12 | Payment Gateway | **Pass — no issues** | 0 | 0 | 3 |
+| # | Screen | Original verdict | Status |
+|---|---|---|---|
+| 1 | Splash | Pass with minor issues | ✅ Fixed (gradient angle, status bar) |
+| 2 | Login | Pass with minor issues | ✅ Fixed (color drift, gradient angle) |
+| 3 | OTP (all states) | Pass with minor issues | ✅ Fixed (phone-number weight/color, box spacing) |
+| 4 | Complete Profile | **Needs fixes** — functional dead-end | ✅ Fixed (real Gender/DOB/Height/Weight pickers built) |
+| 5 | Connect Wearable (onboarding) | Pass with minor issues | ✅ Fixed (casing typo) |
+| 6 | Home | **Pass — no issues** | No fix needed |
+| 7 | Notifications | Pass with minor issues | ✅ Fixed (rows now tappable) |
+| 8 | Profile (Primary + Secondary) | **Needs fixes** — systematic icon bug | ✅ Fixed (icon colors, wearable card) |
+| 9 | Member Details (3 tabs) | **Needs fixes** — systematic icon bug | ✅ Fixed (icon colors, header menu, axis labels, caption) |
+| 10 | Metric Details | **Needs fixes** | ✅ Fixed (background tint, gridlines, axis scale) |
+| 11 | Select Wearable Account (3 variants) | Pass with minor issues | ✅ Fixed (toast font size) |
+| 12 | Payment Gateway | **Pass — no issues** | No fix needed |
 
 ## 🔴 Critical — fix before anything else
 
@@ -62,9 +62,16 @@ Pixel-level + code-quality audit of all 12 built screens against the real Figma 
 ## What's genuinely excellent
 Home and Payment Gateway came back with zero real issues. Splash, Login, OTP, Connect Wearable (onboarding), and Select Wearable Account are all "pass with minor issues" — meaning the auth/onboarding flow and the wearable-connection flow are both in very good shape pixel-wise, modulo the Complete Profile dead-end. Every screen's text content, copy, and overall layout structure matched Figma; nearly all issues found are color/size precision or missing secondary affordances, not structural rebuilds.
 
-## Suggested fix order
-1. Complete Profile dead-end (blocks demoing the whole onboarding flow).
-2. The 2 systematic icon-color bugs (Profile settings rows, Member Details metric cards) — high-value, low-effort, single-file fixes each.
-3. Member Details 3-dot menu + Metric Details chart gaps (now precisely specified, ready to implement).
-4. Everything else in the medium/low lists, roughly in the order listed above.
-5. Raise the Phase 2 vendor / Subscriptions-screen flags with whoever owns the Figma file and roadmap — these need a product decision, not just code.
+## Fix order followed
+1. Complete Profile dead-end — fixed first since it blocked demoing the whole onboarding flow.
+2. The 2 systematic icon-color bugs (Profile settings rows, Member Details metric cards).
+3. Member Details 3-dot menu + axis labels + caption, then Metric Details chart gaps.
+4. Notifications, OTP, Splash, Login, Connect Wearable (onboarding), Select Wearable Account, in that order.
+
+Each iteration: implement → typecheck/lint → rebuild + screenshot in the simulator → diff against the Figma reference → update that screen's verification doc → commit → only then move to the next screen.
+
+## Still open (not code bugs — need a product/design decision, not addressed in this pass)
+- Raise the Phase 2 vendor (Fitbit/Garmin/Samsung Health/Oura) vs. documented Phase 1 scope conflict with whoever owns the Figma file and roadmap.
+- The separate, not-yet-built "Subscriptions" list screen (4 states) has no implementation or tracking task yet.
+- Metric Details' 7D/4W/1Y range tabs remain honest placeholders (no real Figma reference exists for them).
+- A handful of low-severity items intentionally left as-is (noted in each report): missing accessibility labels on a few compound controls, fixed-pixel header heights that won't scale to very different device sizes, Login's CTA-block layout strategy, country-code field not being tappable.
