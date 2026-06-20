@@ -17,7 +17,27 @@ const currentMember: Member = {
   hidden: false,
 };
 
-const sharedMembers: Member[] = [];
+// Dummy test data — stands in for the future Supabase-backed shared-members
+// fetch, so the Home -> Member Details navigation flow is exercisable end to
+// end. See CLAUDE.md "Not Set Up Yet" -- no backend exists yet.
+const sharedMembers: Member[] = [
+  {
+    id: 'member-mom',
+    accountId: 'account-self',
+    role: 'secondary',
+    name: 'Mom',
+    pinned: false,
+    hidden: false,
+  },
+  {
+    id: 'member-dad',
+    accountId: 'account-self',
+    role: 'secondary',
+    name: 'Dad',
+    pinned: false,
+    hidden: false,
+  },
+];
 
 export function HomeScreen() {
   const router = useRouter();

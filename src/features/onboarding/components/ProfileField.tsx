@@ -51,7 +51,10 @@ export function ProfileField({
         {showAsterisk && <Text style={styles.asterisk}> *</Text>}
       </Text>
       {isSelect ? (
-        <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} field, ${value || placeholder}`}>
           {content}
         </Pressable>
       ) : (

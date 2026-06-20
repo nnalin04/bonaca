@@ -37,7 +37,7 @@ export function HomeHeader({
           onPress={onPressNotifications}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Notifications">
+          accessibilityLabel="Open notifications">
           <IconBell size={28} color={Colors.white} strokeWidth={1.75} />
           {unreadNotificationCount > 0 && (
             <View style={styles.badge}>
@@ -51,7 +51,7 @@ export function HomeHeader({
           onPress={onPressProfile}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Profile">
+          accessibilityLabel="Open profile">
           <IconUserCircle size={28} color={Colors.white} strokeWidth={1.75} />
         </Pressable>
       </View>

@@ -36,6 +36,7 @@ export function OtpInput({ value, onChange, hasError }: OtpInputProps) {
       {Array.from({ length: OTP_LENGTH }).map((_, index) => (
         <TextInput
           key={index}
+          testID={`otp-digit-${index}`}
           ref={(ref) => {
             inputRefs.current[index] = ref;
           }}
@@ -46,6 +47,7 @@ export function OtpInput({ value, onChange, hasError }: OtpInputProps) {
           keyboardType="number-pad"
           maxLength={1}
           textAlign="center"
+          accessibilityLabel={`OTP digit ${index + 1} of ${OTP_LENGTH}`}
         />
       ))}
     </View>

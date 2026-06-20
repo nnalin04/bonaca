@@ -8,6 +8,7 @@ import {
   IconUsers,
 } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
+import type { ComponentType } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -51,11 +52,50 @@ const providerLabels: Record<WearableConnection['provider'], string> = {
   oura: 'Oura',
 };
 
+interface SettingsRowConfig {
+  key: string;
+  icon: ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  label: string;
+  onPress: () => void;
+}
+
 export function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const isPrimary = currentMember.role === 'primary';
   const displayName = isPrimary ? currentMember.name : secondaryMemberName;
+
+  // Per the real Figma design (197:5921 Secondary vs 39:2025 Primary), these
+  // rows are identical across both roles — no role-based gating on this screen.
+  const settingsRows: SettingsRowConfig[] = [
+    { key: 'members', icon: IconListCheck, label: 'Members & Permissions', onPress: () => {} },
+    {
+      key: 'subscription',
+      icon: IconCash,
+      label: 'Manage Subscription',
+      onPress: () => router.push('/subscription/payment-gateway'),
+    },
+    { key: 'hidden-members', icon: IconUsers, label: 'Hidden Members', onPress: () => {} },
+    {
+      key: 'documentation',
+      icon: IconFileDescription,
+      label: 'Documentation',
+      onPress: () => {},
+    },
+    { key: 'terms', icon: IconArticle, label: 'Terms & Conditions', onPress: () => {} },
+    {
+      key: 'privacy',
+      icon: IconFileTextShield,
+      label: 'Privacy Policy',
+      onPress: () => {},
+    },
+    {
+      key: 'logout',
+      icon: IconLogout,
+      label: 'Log Out',
+      onPress: () => router.replace('/(auth)/login'),
+    },
+  ];
 
   return (
     <View style={styles.screen}>
@@ -92,52 +132,14 @@ export function ProfileScreen() {
         )}
 
         <SettingsListCard>
-          {[
-            // Per the real Figma design (197:5921 Secondary vs 39:2025 Primary), these
-            // rows are identical across both roles — no role-based gating on this screen.
+          {settingsRows.map((row) => (
             <SettingsListItem
-              key="members"
-              icon={IconListCheck}
-              label="Members & Permissions"
-              onPress={() => {}}
-            />,
-            <SettingsListItem
-              key="subscription"
-              icon={IconCash}
-              label="Manage Subscription"
-              onPress={() => router.push('/subscription/payment-gateway')}
-            />,
-            <SettingsListItem
-              key="hidden-members"
-              icon={IconUsers}
-              label="Hidden Members"
-              onPress={() => {}}
-            />,
-            <SettingsListItem
-              key="documentation"
-              icon={IconFileDescription}
-              label="Documentation"
-              onPress={() => {}}
-            />,
-            <SettingsListItem
-              key="terms"
-              icon={IconArticle}
-              label="Terms & Conditions"
-              onPress={() => {}}
-            />,
-            <SettingsListItem
-              key="privacy"
-              icon={IconFileTextShield}
-              label="Privacy Policy"
-              onPress={() => {}}
-            />,
-            <SettingsListItem
-              key="logout"
-              icon={IconLogout}
-              label="Log Out"
-              onPress={() => router.replace('/(auth)/login')}
-            />,
-          ]}
+              key={row.key}
+              icon={row.icon}
+              label={row.label}
+              onPress={row.onPress}
+            />
+          ))}
         </SettingsListCard>
       </ScrollView>
     </View>
