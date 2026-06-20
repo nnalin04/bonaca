@@ -1,0 +1,14 @@
+appId: com.anonymous.bonaca
+---
+- runFlow: _login-to-home.yaml
+- tapOn: "Open profile"
+- extendedWaitUntil:
+    visible: "Profile & Settings"
+    timeout: 10000
+- tapOn: "Manage Subscription"
+- extendedWaitUntil:
+    visible: "Payment Gateway"
+    timeout: 10000
+- assertVisible: "Add Payment Method"
+- tapOn: "Add Payment Method"
+- takeScreenshot: subscription-flow-payment-gateway

@@ -1,0 +1,95 @@
+appId: com.anonymous.bonaca
+---
+- runFlow: _login-to-home.yaml
+
+# --- Home header icons (push navigation, own back button) ---
+- tapOn: "Open notifications"
+- extendedWaitUntil:
+    visible: ".*Mom.*"
+    timeout: 10000
+- assertVisible: ".*Subscription expiring soon.*"
+- tapOn: "Go back"
+- extendedWaitUntil:
+    visible: "Shared with you"
+    timeout: 10000
+
+- tapOn: "Open profile"
+- extendedWaitUntil:
+    visible: "Profile & Settings"
+    timeout: 10000
+- assertVisible: "Members & Permissions"
+- assertVisible: "Log Out"
+- waitForAnimationToEnd:
+    timeout: 3000
+# Note: text-based tapOn for "Go back" on this screen is unreliable in this
+# harness (heavier ScrollView content seems to throw off Maestro's resolved
+# tap coordinate even after explicit settle waits) -- confirmed via a debug
+# build that the app's onPress never even fired, while a raw point tap at
+# the same visual location worked every time. Using the point directly.
+- tapOn:
+    point: "6%, 6%"
+- extendedWaitUntil:
+    visible: "Shared with you"
+    timeout: 10000
+
+# --- Bottom tab bar (tab switch, no back button, tab bar persists) ---
+# Note: iOS appends ", tab, N of 3" to tab bar accessibility labels, so plain
+# "Notifications"/"Profile"/"Home" (full-string match) won't resolve -- regex wildcard needed.
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: ".*Notifications, tab.*"
+- extendedWaitUntil:
+    visible: ".*Mom.*"
+    timeout: 10000
+- tapOn: ".*Profile, tab.*"
+- extendedWaitUntil:
+    visible: "Profile & Settings"
+    timeout: 10000
+- tapOn: ".*Home, tab.*"
+- extendedWaitUntil:
+    visible: "Shared with you"
+    timeout: 10000
+
+# --- Member Details + tabs + 3-dot menu ---
+- tapOn: "Prasanna Kumar (You)"
+- extendedWaitUntil:
+    visible: "Vitals"
+    timeout: 10000
+- assertVisible: "Heart Rate"
+- tapOn: "Activity"
+- extendedWaitUntil:
+    visible: "Steps"
+    timeout: 10000
+- tapOn: "Behaviour"
+- extendedWaitUntil:
+    visible: "Routine"
+    timeout: 10000
+- tapOn: "Vitals"
+- extendedWaitUntil:
+    visible: "Heart Rate"
+    timeout: 10000
+- tapOn: "More options"
+- extendedWaitUntil:
+    visible: "Member Options"
+    timeout: 10000
+- assertVisible: "Unpin from top"
+- assertVisible: "Edit Nick Name"
+- assertVisible: "Hidden Members"
+- tapOn: "Close"
+- extendedWaitUntil:
+    notVisible: "Member Options"
+    timeout: 10000
+
+# --- Metric Details + range tabs ---
+- tapOn: "Heart Rate"
+- extendedWaitUntil:
+    visible: "Average Heart Rate"
+    timeout: 10000
+- assertVisible: "7D"
+- tapOn: "7D"
+- assertVisible: "4W"
+- tapOn: "4W"
+- assertVisible: "1Y"
+- tapOn: "1Y"
+- tapOn: "1D"
+- takeScreenshot: member-metric-details-ok

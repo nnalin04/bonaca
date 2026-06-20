@@ -1,0 +1,4 @@
+appId: com.anonymous.bonaca
+---
+- runFlow: _login-to-home.yaml
+- takeScreenshot: onboarding-complete-home
