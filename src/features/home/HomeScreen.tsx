@@ -1,54 +1,27 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptySharedState } from '@/features/home/components/EmptySharedState';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { MemberSyncCard } from '@/features/home/components/MemberSyncCard';
+import { useMembers } from '@/features/members';
+import { useNotifications } from '@/features/notifications';
 import { Colors, Fonts } from '@/theme/tokens';
-import type { Member } from '@/types';
-
-const currentMember: Member = {
-  id: 'member-self',
-  accountId: 'account-self',
-  role: 'primary',
-  name: 'Prasanna Kumar',
-  pinned: true,
-  hidden: false,
-};
-
-// Dummy test data — stands in for the future Supabase-backed shared-members
-// fetch, so the Home -> Member Details navigation flow is exercisable end to
-// end. See CLAUDE.md "Not Set Up Yet" -- no backend exists yet.
-const sharedMembers: Member[] = [
-  {
-    id: 'member-mom',
-    accountId: 'account-self',
-    role: 'secondary',
-    name: 'Mom',
-    pinned: false,
-    hidden: false,
-  },
-  {
-    id: 'member-dad',
-    accountId: 'account-self',
-    role: 'secondary',
-    name: 'Dad',
-    pinned: false,
-    hidden: false,
-  },
-];
 
 export function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { self, others, isLoading, errorMessage } = useMembers();
+  const { notifications } = useNotifications(self?.id);
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
   return (
     <View style={styles.screen}>
       <HomeHeader
-        greetingName={currentMember.name.split(' ')[0]}
-        statusMessage="Everything looks stable"
-        unreadNotificationCount={3}
+        greetingName={self?.name.split(' ')[0] ?? ''}
+        statusMessage={self?.statusMessage ?? 'Everything looks stable'}
+        unreadNotificationCount={unreadNotificationCount}
         onPressNotifications={() => router.push('/notifications')}
         onPressProfile={() => router.push('/profile')}
       />
@@ -59,27 +32,37 @@ export function HomeScreen() {
           { paddingBottom: insets.bottom + 24 },
         ]}
         showsVerticalScrollIndicator={false}>
-        <MemberSyncCard
-          avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
-          displayName={`${currentMember.name} (You)`}
-          syncLabel="Last synced: Just now"
-          onPress={() => router.push(`/member/${currentMember.id}`)}
-        />
-
-        <Text style={styles.sectionTitle}>Shared with you</Text>
-
-        {sharedMembers.length === 0 ? (
-          <EmptySharedState />
+        {isLoading && !self ? (
+          <ActivityIndicator style={styles.loading} />
+        ) : errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
         ) : (
-          sharedMembers.map((member) => (
-            <MemberSyncCard
-              key={member.id}
-              avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
-              displayName={member.nickname ?? member.name}
-              syncLabel="Last synced: Just now"
-              onPress={() => router.push(`/member/${member.id}`)}
-            />
-          ))
+          <>
+            {self && (
+              <MemberSyncCard
+                avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
+                displayName={`${self.name} (You)`}
+                syncLabel="Last synced: Just now"
+                onPress={() => router.push(`/member/${self.id}`)}
+              />
+            )}
+
+            <Text style={styles.sectionTitle}>Shared with you</Text>
+
+            {others.length === 0 ? (
+              <EmptySharedState />
+            ) : (
+              others.map((member) => (
+                <MemberSyncCard
+                  key={member.id}
+                  avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
+                  displayName={member.nickname ?? member.name}
+                  syncLabel="Last synced: Just now"
+                  onPress={() => router.push(`/member/${member.id}`)}
+                />
+              ))
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -103,5 +86,14 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginTop: 24,
     marginBottom: 12,
+  },
+  loading: {
+    marginTop: 48,
+  },
+  errorText: {
+    marginTop: 48,
+    textAlign: 'center',
+    color: Colors.error,
+    fontFamily: Fonts.family,
   },
 });

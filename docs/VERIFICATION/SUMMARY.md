@@ -1,5 +1,97 @@
 # Bonaca — Full Screen Verification Summary
 
+## 2026-06-22 pass — figma-rn-fidelity skill audit (Members & Sharing screens + critical bugs)
+
+Triggered by a user report of layout bugs (button placement, nav bar position, wrong colors).
+Used the new `figma-rn-fidelity` skill (`.claude/skills/figma-rn-fidelity/`) — Figma REST API
+ground truth (MCP had hit its Starter-plan call-limit ceiling) cross-checked against live
+simulator screenshots via Maestro, with a real backend (Docker Postgres + `./mvnw spring-boot:run`)
+for the first time this engagement.
+
+**Critical bugs found and fixed (not Figma-fidelity issues — actual functional breakage):**
+1. **The long-running backend dev process was stale**, compiled before a large amount of this
+   session's backend work — every non-`/auth/**` endpoint (members, metrics, subscriptions,
+   notifications) silently 401'd. Masked because the Testcontainers/Postgres integration tier had
+   never once executed this whole engagement (no Docker in the sandbox) — restarting from current
+   source then surfaced a real, second bug:
+2. **`metric_baselines.baseline_mean`/`baseline_stddev` and `metric_readings.metric_value`** are
+   `NUMERIC(10,3)` in the Flyway migration but mapped as bare `double` in the JPA entities —
+   Hibernate's `ddl-auto=validate` (the real Postgres tier; the H2 fast tier never exercises this,
+   it generates schema from entities directly) rejected it at startup, so **onboarding
+   (`complete-profile`) was completely broken against a real database**. Fixed with explicit
+   `columnDefinition = "numeric(10,3)"` on the three affected `@Column`s
+   (`MetricBaseline.java`, `MetricReading.java`). Confirmed via `./mvnw verify` — all 265 tests
+   pass including the Testcontainers tier, run successfully for the first time this engagement.
+3. **A restored session (valid tokens, incomplete profile) routed to Home, not Complete
+   Profile** — `SplashScreen` only checked `isAuthenticated`, never `profileCompleted`. Any user
+   who closed the app between OTP verify and finishing onboarding would relaunch into Home, which
+   then failed every member fetch with a raw, unstyled red "Complete your profile first" error —
+   a dead end with no way forward except logging out. Fixed: `AuthContext` now tracks
+   `profileCompleted` (from both `login()` and session restore), `SplashScreen` routes to
+   `/(auth)/complete-profile` when authenticated-but-incomplete. Reproduced live, fixed, reproduced
+   the exact same scenario again to confirm the fix (force-kill mid-onboarding → relaunch → lands
+   on Complete Profile, not the broken Home state).
+
+**Real Figma-fidelity bugs found and fixed:**
+4. **The bottom tab bar's icons were never wired up at all** — `app/(tabs)/_layout.tsx` set only
+   `title` per `Tabs.Screen`, no `tabBarIcon`, so React Navigation rendered its fallback (a
+   triangle/missing-glyph shape) instead of Home/Bell/Profile icons, on literally every screen
+   with the tab bar — and the active-tab tint was React Navigation's default iOS blue, not the
+   app's actual `Colors.accent` purple. Fixed with `IconHome`/`IconBell`/`IconUserCircle`
+   (`@tabler/icons-react-native`, consistent with icons used elsewhere) + explicit
+   `tabBarActiveTintColor`/`tabBarInactiveTintColor`. This is very likely what the user meant by
+   "navigation bar is not where it's supposed to be."
+5. **Member List's "Add Member" button** (`MemberListScreen.tsx`) was white with a gray border;
+   Figma node `197:9935` specifies a filled `#f0f3ff` lavender background, no border — sampled the
+   exact hex from the Figma reference screenshot and confirmed `Colors.tabBarTrack` (already a
+   defined token, originally for Metric Detail's range pill) is that exact value. Fixed by reusing
+   it rather than adding a new token.
+
+**Screens audited live this pass** (real signup → OTP → onboarding → every screen, via Maestro,
+against the real backend): Home, Profile, Member List, Invite Member, Hidden Members, Payment
+Gateway, Notifications. All matched Figma structurally once the above fixes landed; no further
+discrepancies found in this set.
+
+**Edit Permissions — completed in a follow-up round.** Set up a genuine two-account scenario (a
+real Primary + a real Secondary who accepted the invite and has live sharing grants) by switching
+sessions in the same simulator (log out / sign up / log back in, three times). Reached the real
+screen via Member Detail's 3-dot menu → "Edit Permissions" and screenshot-verified it live: header,
+"Manage access for {name}" subtitle, All/Vitals/Activity/Behaviour rows with icons and switches all
+correct, all-on by default per PRD §11.1. Confirmed this is a **deliberate, already-documented**
+divergence from Figma's literal mockup (Figma `197:5497` shows per-metric checkboxes + a "Save"
+button + a green toggle — the code's own comment already explains why: the data model only
+persists at the scope level per PRD §11.2, toggles apply instantly per PRD §11.3, and the app's
+purple `Colors.accent` is used everywhere else for switches/buttons, not Figma's one-off green).
+No code change needed — this screen is correct relative to the PRD, which is the authoritative
+spec, not the not-yet-relabeled Figma file.
+
+**Regression spot-check — completed in a follow-up round.** Re-exercised live: Splash (every
+relaunch), Login (every signup), OTP (every signup), Complete Profile (twice, including the
+stuck-session fix verification), Connect Wearable (reached and screenshotted, intact —
+Fitbit/Garmin/Samsung Health/Oura rows, "I'll Connect Later" link), Member Details (screenshotted,
+icon colors and layout intact, matches the original per-metric icon-color fix), Metric Detail
+(screenshotted — background tint, gridlines, fixed-scale axis labels all still present, matching
+the original chart fixes). **No regressions found in any of these 7.**
+
+**Select Wearable Account — could not independently verify.** Confirmed via `grep` that nothing in
+the current app navigates to `/subscription/select-wearable-account` — it's an orphaned route, not
+reachable from any visible UI (pre-existing, not touched this engagement). Attempted to reach it
+directly via `bonaca://subscription/select-wearable-account` deep links (tried twice, including
+from a clean fresh-launch state) — both times the app rendered `(auth)/connect-wearable` instead
+of the subscription route, a routing quirk worth a dedicated investigation if this screen is ever
+wired back into the app, but out of scope for this fidelity pass.
+
+**Still genuinely deferred** (unchanged from the prior round, not addressed in this one either):
+**Member Details' Vitals/Activity/Behaviour metric grid and Metric Detail screen's underlying
+data** — both still on mock data this engagement (no real wearable data source exists without
+Spike, and both screens need a genuine empty/sparse-state redesign, not just a fidelity pass — see
+`docs/TECHNICAL/BACKEND_STATUS_AND_NEXT_STEPS.md` §3 Metrics). Their *rendering* was confirmed
+intact in this round's regression check above; their *data* is still not real.
+
+---
+
+**Realignment note**: this verification pass was done against the Figma file and role model as they stood before `docs/PRD.pdf` became the authoritative spec (see `docs/PRD.md`'s "Realignment note"). Role naming is inverted, the wearable data source changed (Spike API, not HealthKit/Health Connect), and the permissions/trial/payment models all changed since. These reports remain an accurate historical record of what was verified at the time, but every screen here will need re-verification once Figma and the implementation are actually realigned — not done as part of this note.
+
 Pixel-level + code-quality audit of all 12 built screens against the real Figma design (`.design-reference/`), done screen-by-screen with exact hex/fontSize/fontWeight cross-checks from the Figma JSON, not just visual eyeballing. Individual reports: `docs/VERIFICATION/01-splash.md` through `12-payment-gateway.md`.
 
 **✅ All 10 screens with findings have been fixed, one at a time, each re-verified visually against its Figma reference before moving to the next.** Home and Payment Gateway needed no fixes. See each screen's report for its "✅ FIX APPLIED" section. The original findings are kept inline (not deleted) for history.

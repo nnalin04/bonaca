@@ -1,4 +1,4 @@
-export type MemberRole = 'primary' | 'secondary' | 'tertiary';
+export type MemberRole = 'primary' | 'secondary';
 
 export interface Account {
   id: string;
@@ -16,6 +16,12 @@ export interface Member {
   hidden: boolean;
   /** Short status line shown under the member's name on Member Details, e.g. "A few vitals show improvement today". */
   statusMessage?: string;
+  /** Free-text gender as captured on Complete Profile — matches the Figma gender picker, not a fixed enum. */
+  gender?: string;
+  /** ISO 8601 date (YYYY-MM-DD), no time component. */
+  dob?: string;
+  heightCm?: number;
+  weightKg?: number;
 }
 
 export type WearableProvider =
@@ -121,7 +127,7 @@ export interface PaymentMethod {
   detail?: string;
 }
 
-export type SharingScope = 'vitals' | 'activity' | 'behaviour' | 'location';
+export type SharingScope = 'vitals' | 'activity' | 'behaviour';
 
 export interface SharingGrant {
   id: string;

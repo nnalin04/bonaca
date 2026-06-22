@@ -2,20 +2,22 @@
 
 Grounded in [`docs/PRD.md`](PRD.md), [`docs/MARKET_RESEARCH.md`](MARKET_RESEARCH.md), [`CLAUDE.md`](../CLAUDE.md), and the actual scaffold (`src/types/index.ts`, `src/lib/health/HealthProvider.ts`, `package.json`). Written for the current team shape — one engineer (you) plus one sales/marketing person, more engineers joining soon — under an explicit "good product first" priority. Every recommendation favors quality and a low-but-not-zero ops burden over the absolute cheapest/fastest option, and avoids team-scale infrastructure the team doesn't have yet.
 
+**Status note (added after `docs/PRD.pdf` became authoritative):** two things below are now stale relative to what's actually true. (1) §2's Supabase recommendation was **not** the path taken — the actual backend (`backend/`) is custom Java/Spring Boot; see `docs/TECHNICAL/BACKEND_COMPARISON_AND_MIGRATION.md`. (2) §5 Payments and §6 Wearable Sync are rewritten below to match `docs/PRD.pdf`'s simpler cards+UPI/Spike-API model — the rest of this document (time-series strategy, auth/OTP design, security/compliance) is still accurate.
+
 ## Recommended Stack at a Glance
 
 | Layer | Recommendation | Why (one line) |
 |---|---|---|
 | Mobile client | Keep Expo (~56) + React Native + TypeScript, already scaffolded | Validated, not just assumed — see §1 |
-| Backend platform | **Supabase** (Postgres + Auth scaffolding + Edge Functions + Storage), region `ap-south-1` (Mumbai) | Best fit for the relational family/permission model + RLS; lowest ops burden for a solo engineer; real Postgres a future hire will already know |
-| Time-series strategy | Plain Postgres: raw `metric_readings` table + scheduled rollup tables via `pg_cron`, **not** TimescaleDB | TimescaleDB is deprecated on new Supabase Postgres-17 projects (§3); data volume doesn't need it anyway |
-| OTP/SMS | **MSG91** (India-first pricing/DLT support), called from a Supabase Edge Function — not Supabase's built-in phone-auth SMS provider | Cheapest at ~₹0.15/OTP, India DLT-compliant; Supabase's default providers aren't built for India DLT template registration |
-| Payments | **RevenueCat** wrapping StoreKit (iOS) + Play Billing (Android default) + Google **User Choice Billing → Razorpay** for India Android | The Figma "pay Razorpay/UPI directly" assumption only fully holds on Android-in-India; see §5 — this is the finding most likely to surprise you |
-| Wearable sync | Parent-side sync companion (already required, on-device-only constraint) pushing batched readings to a Supabase Edge Function endpoint | No change from CLAUDE.md's existing Phase 1 plan — confirmed correct by research |
-| Push notifications | Expo Push Notification Service | Simplest path for an Expo app; only worth swapping to direct FCM/APNs if a specific feature needs it later |
-| Hosting/CI | Supabase-managed Postgres/Functions (no separate server to run) + EAS Build/Update + GitHub Actions | No infrastructure to operate beyond Supabase's dashboard and EAS |
-| Observability | Sentry (crashes/errors) + PostHog (product analytics, funnels) | Together they cover both "what broke" and "where users drop off"; PostHog's free tier is generous enough for pre-revenue stage |
-| Repo structure | Single repo, add a `supabase/` directory (migrations + Edge Functions) alongside the existing `src/` Expo app | No second repo needed yet — Supabase removes the case for a separate backend service repo |
+| Backend platform | Originally recommended Supabase; **actually built custom (Java/Spring Boot)**, see `docs/TECHNICAL/BACKEND_COMPARISON_AND_MIGRATION.md` | This row is historical context, not the current build's platform |
+| Time-series strategy | Plain Postgres: raw `metric_readings` table + scheduled rollup tables, **not** TimescaleDB | Data volume doesn't need it; still accurate regardless of platform |
+| OTP/SMS | **MSG91** (India-first pricing/DLT support) | Cheapest at ~₹0.15/OTP, India DLT-compliant — still accurate, already built (`backend/.../auth`) |
+| Payments | **Cards (global) + UPI only, flat ₹249/month** per `docs/PRD.pdf` §6–7 — **conflicts with Apple's StoreKit requirement for iOS, unresolved, see §5** | Simpler than the previously-planned RevenueCat/StoreKit/Play-Billing/Razorpay-UCB split, but the iOS conflict needs an explicit decision before building |
+| Wearable sync | **Spike API** (cloud, cross-vendor: Garmin/Fitbit/Samsung/Oura) per `docs/PRD.pdf` §3.1 | Replaces the on-device HealthKit/Health Connect + parent-side sync-companion plan this doc previously described — see §6 |
+| Push notifications | Expo Push Notification Service | Simplest path for an Expo app; only worth swapping to direct FCM/APNs if a specific feature needs it later. Not yet built. |
+| Hosting/CI | Custom backend hosting (see `docs/TECHNICAL/BACKEND_CUSTOM_IMPLEMENTATION.md` §8) + EAS Build/Update + GitHub Actions | Reflects the actual custom-backend path, not the original Supabase-managed plan |
+| Observability | Sentry (crashes/errors) + PostHog (product analytics, funnels) | Together they cover both "what broke" and "where users drop off". Not yet built. |
+| Repo structure | Single repo: `backend/` (Java/Spring Boot) alongside the existing `src/` Expo app | Reflects the actual custom-backend repo layout, not the originally-planned `supabase/` directory |
 
 ---
 
@@ -28,18 +30,20 @@ Grounded in [`docs/PRD.md`](PRD.md), [`docs/MARKET_RESEARCH.md`](MARKET_RESEARCH
 
 ## 2. Backend Platform
 
-CLAUDE.md currently states "no backend of any kind" — this is the highest-leverage open decision. Compared against Bonaca's actual requirements (not generic feature lists):
+*(Historical — this section's recommendation was not the path taken. The actual backend is custom Java/Spring Boot; see `docs/TECHNICAL/BACKEND_COMPARISON_AND_MIGRATION.md` for why and `backend/` for the implementation. Kept for the comparison reasoning, which is still useful context.)*
+
+Compared against Bonaca's actual requirements (not generic feature lists):
 
 | Requirement | Supabase | Firebase | Custom Node/NestJS + Postgres | Convex |
 |---|---|---|---|---|
 | Relational family/permission model (`Account`→`Member`→`SharingGrant`) | **Native fit** — real Postgres, foreign keys, joins | Firestore is document/NoSQL — this model gets awkward fast | Native fit, but you build everything | Document-reactive, not relational — same awkwardness as Firestore |
-| Row-level access control (a Tertiary member should only see what `SharingGrant` permits) | **Row Level Security (RLS) policies enforced at the DB layer** — exactly this use case | No native RLS equivalent; enforce in app code, easy to get wrong | You write and maintain the authorization layer yourself | No native RLS equivalent |
+| Row-level access control (a Secondary Member should only see what `SharingGrant` permits) | **Row Level Security (RLS) policies enforced at the DB layer** — exactly this use case | No native RLS equivalent; enforce in app code, easy to get wrong | You write and maintain the authorization layer yourself | No native RLS equivalent |
 | TypeScript fit for a solo full-stack engineer | Auto-generated TS types from schema; Edge Functions in TS/Deno | TS SDKs exist, less schema-driven | Full TS, but you own the framework choices too | TS-native by design — best DX here, but at the cost of relational/RLS fit above |
 | Ops burden today (1 person) | Low — managed Postgres, managed Auth scaffolding, managed Functions | Low | **High** — you provision, patch, and scale a server yourself | Low |
 | Team-readiness soon | Good — Postgres is something every backend hire already knows | Good, but Firestore data-modeling knowledge is more niche | Best long-term flexibility, but means a new hire's first weeks are infra, not features | Smaller hiring pool familiar with Convex's model |
 | Cost at early scale | Free tier, then ~$25/mo Pro | Free tier, scales similarly | You pay for compute either way, plus your own time running it | Free tier, then usage-based |
 
-**Recommendation: Supabase.** The RLS fit for Bonaca's exact permission model (Primary/Secondary/Tertiary visibility via `SharingGrant`) is the deciding factor — it's the one requirement where Supabase is structurally right and the alternatives are structurally awkward, not just "also possible." It also keeps you in real Postgres, which de-risks hiring (every backend engineer already knows SQL) versus Firestore or Convex's more specific data models. Project region: `ap-south-1` (Mumbai) — lowest latency for the India-first user base and the safer read of DPDP's ambiguous health-data-localization signal (§10).
+**Recommendation: Supabase.** The RLS fit for Bonaca's exact permission model (Primary/Secondary visibility via `SharingGrant`, per `docs/PRD.pdf`'s two-role model — no Tertiary) is the deciding factor — it's the one requirement where Supabase is structurally right and the alternatives are structurally awkward, not just "also possible." It also keeps you in real Postgres, which de-risks hiring (every backend engineer already knows SQL) versus Firestore or Convex's more specific data models. Project region: `ap-south-1` (Mumbai) — lowest latency for the India-first user base and the safer read of DPDP's ambiguous health-data-localization signal (§10).
 
 **What Supabase does *not* replace**: if a future requirement needs heavy custom compute (e.g., a more sophisticated ML-based insight engine than the rule-based confidence scoring in §6 below), a small standalone Node/NestJS worker service can be added later without throwing away Supabase — Supabase Postgres can still be the database, with a separate compute service reading/writing to it. Don't build that service now; nothing in the current PRD requires it.
 
@@ -70,33 +74,40 @@ Compared MSG91, Twilio Verify, Firebase Phone Auth, Gupshup, Exotel on India-spe
 
 ## 5. Payments — the Real Risk
 
-This is the finding most likely to surprise you, because the Figma "Payment Gateway" screen with a UPI/PayPal/Amex/Mastercard/Apple Pay picker implicitly assumes Bonaca can always charge directly. **That's only fully true on one platform-region combination.**
+**Updated per `docs/PRD.pdf` §6–7**: the PDF specifies a single flat ₹249/month plan, paid via **cards (global) + UPI only** — no PayPal/Amex/Mastercard/Apple Pay distinction, no platform-and-region-split billing rail. That's a real simplification of what this section originally researched and recommended (below, kept for reference) — **but it doesn't resolve the underlying Apple constraint, it just doesn't mention it.**
 
-- **iOS, almost everywhere including India**: Apple requires digital subscriptions to go through StoreKit/Apple's in-app purchase system (15–30% commission, 15% under the Small Business Program for <$1M/year revenue). Apple does support **UPI as a funding method in India** — but that UPI payment still flows *into Apple's own billing*, not around it. There is currently no confirmed India-specific carve-out letting you route iOS subscriptions directly to Razorpay/Stripe and skip Apple's cut.
-- **iOS, US only, right now**: following a Ninth Circuit ruling, US apps can currently link out to external payment pages with **no Apple commission** — but this is under active appeal (Apple has petitioned the Supreme Court as of mid-2026) and a December 2025 appellate ruling already suggested Apple *could* reinstate a reduced fee on external purchases. **Do not architect Bonaca's core monetization around this — it's legally unstable and not your primary market anyway.**
-- **iOS, EU/Japan/South Korea**: separate regulatory carve-outs exist (DMA in the EU, the Smartphone Act in Japan, a Korea-specific binary requirement) allowing external payment links, each with different fee structures (e.g., EU's "Core Technology Fee" alternative business terms). Not relevant to Bonaca's India + NRI-diaspora launch markets unless EU-resident NRI users become a real segment later.
-- **Android, India specifically**: Google's **User Choice Billing** program is live in India (also EEA, Japan, Korea, Australia, Indonesia, others) — apps can offer Razorpay (or Stripe/PayU) as an alternative to Google Play Billing at a **reduced ~4% service fee** instead of the standard 15–30%. This is the one place the Figma design's "charge via Razorpay directly" assumption holds up cleanly and cheaply.
-- **Android, elsewhere (including most NRI-diaspora markets unless also UCB-enabled)**: standard Google Play Billing applies.
+**⚠️ Open question, not yet resolved with the user**: Apple requires digital subscriptions to go through StoreKit/Apple's in-app purchase system on iOS almost everywhere, including India (15–30% commission). "Charge the user's card directly" cannot apply to an iOS subscription without either (a) using StoreKit (so "card" really means "the card on file with the App Store," not a direct charge, and Apple takes its cut) or (b) relying on a regional external-purchase carve-out (US Ninth-Circuit-linked, EU DMA, Japan, South Korea — none of which reliably cover Bonaca's India + NRI-diaspora launch markets). The PDF doesn't address this. **Do not build iOS payment integration until this is explicitly decided** — either the PDF's "cards directly" model needs a StoreKit exception called out for iOS, or there's a deliberate decision to accept Apple's cut/use an external-purchase path the user should confirm.
 
-**Recommendation**: Use **RevenueCat** to manage cross-platform entitlements regardless of which rail actually processes the payment — it unifies "is this user's `Subscription` active" into a single check (`isActive`) across iOS StoreKit and Android Play Billing, with a generous free tier up to $2,500 monthly tracked revenue, then 1% revenue share or a $99/mo flat plan. Concretely:
-1. iOS: StoreKit via RevenueCat, full stop — no near-term path around Apple's cut for India/NRI markets.
-2. Android in India: enroll in User Choice Billing, route through Razorpay at ~4% — meaningfully cheaper than the alternative, worth the integration effort.
-3. Android outside UCB-enabled markets: standard Play Billing via RevenueCat.
+Android has no equivalent blocker — Google Play Billing (or User Choice Billing → Razorpay in India, at a reduced ~4% fee vs. standard 15–30%) can charge a card/UPI more directly. The original platform-and-region research below is still factually accurate, just describes a more complex billing-rail split (RevenueCat unifying StoreKit + Play Billing + UCB/Razorpay) than the PDF's flat cards+UPI framing assumes:
 
-This means the Figma "Payment Gateway" UI can stay as designed (the user never needs to see *which* rail processed their payment), but the engineering underneath is platform-and-region-branched, not a single direct Razorpay/Stripe integration as the Figma payment-method picker might suggest at first glance. Update the PRD's "Open gap: no explicit `PaymentMethod` type" note to also record *which processing rail* (`storekit` | `play_billing` | `play_ucb_razorpay`) handled each transaction, for reconciliation.
+<details>
+<summary>Original platform/region research (superseded by the PDF's simpler framing above, kept for the constraint detail)</summary>
+
+- **iOS, almost everywhere including India**: Apple requires digital subscriptions to go through StoreKit/Apple's in-app purchase system (15–30% commission, 15% under the Small Business Program for <$1M/year revenue). Apple does support **UPI as a funding method in India** — but that UPI payment still flows *into Apple's own billing*, not around it.
+- **iOS, US only, right now**: following a Ninth Circuit ruling, US apps can currently link out to external payment pages with **no Apple commission** — but this is under active appeal and legally unstable; not a foundation to architect around.
+- **iOS, EU/Japan/South Korea**: separate regulatory carve-outs exist (DMA in the EU, the Smartphone Act in Japan, a Korea-specific binary requirement). Not relevant to Bonaca's India + NRI-diaspora launch markets unless EU-resident NRI users become a real segment later.
+- **Android, India specifically**: Google's **User Choice Billing** program — apps can offer Razorpay as an alternative to Google Play Billing at a reduced ~4% service fee instead of the standard 15–30%.
+- **Android, elsewhere**: standard Google Play Billing applies.
+
+If RevenueCat is still the right call once the iOS question above is resolved, it unifies "is this user's `Subscription` active" into one check across rails, free tier up to $2,500 monthly tracked revenue.
+
+</details>
 
 ## 6. Wearable Sync Architecture
 
-No change to the Phase 1 plan already in `CLAUDE.md` and confirmed by `MARKET_RESEARCH.md` §10 (no aggregator is built for Bonaca's parent-syncs-their-own-data topology). Concretely for the sync companion (the Secondary Member's own Bonaca install):
+**Superseded by `docs/PRD.pdf` §3.1: wearable data comes from the Spike API**, not the on-device HealthKit/Health Connect parent-side-sync-companion plan this section previously described. Spike syncs cross-vendor (Garmin, Fitbit, Samsung, Oura, etc.) from the device vendor's own cloud once a device is connected — there is no longer a hard requirement that the data-owner's phone run a Bonaca background-sync task, since Spike isn't reading local on-device storage.
 
-- **Trigger**: a background task (`expo-background-task` / iOS BGTaskScheduler equivalent, Android WorkManager equivalent under the hood) runs periodically (e.g., every 1–4 hours, plus on app foreground) to pull new HealthKit/Health Connect samples since the last successful sync.
-- **Batching**: send readings in batches (e.g., up to a few hundred rows per request) to a single Supabase Edge Function endpoint, not one network call per reading.
-- **Retry/backoff**: on failure, queue locally (SQLite, per §1) and retry with exponential backoff; surface the **Connection Issue - Retry** and **Card - Disconnected** Figma states based on consecutive-failure count and `lastSyncedAt` staleness, exactly as the PRD's NFR already specifies — this is a UI/state-machine concern wired to a simple failure counter, not new infrastructure.
-- **Design the ingestion payload like a normalized aggregator schema now** (per‑metric-type, timestamped, source-tagged) — `MarketResearch.md` §10's specific recommendation — so swapping in Terra/Vital for Phase 2 providers later doesn't require a second data model on the backend.
+This section needs a real rewrite once the Spike API's actual integration model (webhook push vs. polling, auth flow, per-device cost metering) is researched — not yet done. What carries over unchanged:
+
+- **Design the ingestion payload like a normalized schema** (per-metric-type, timestamped, source-tagged) matching `MetricReading` in `src/types/index.ts` — still correct regardless of which aggregator delivers the data.
+- **Retry/staleness UX**: surface the **Connection Issue - Retry** and **Card - Disconnected** Figma states based on `lastSyncedAt` staleness — still correct, just driven by Spike's sync status instead of a local background task's failure counter.
+- The rollup/baseline strategy in §3 is unaffected — `metric_readings` still gets populated the same way regardless of source.
+
+What's now wrong and needs replacing: the `expo-background-task`/local-SQLite-queue/BGTaskScheduler design, and the "no aggregator fits Bonaca's topology" conclusion `docs/MARKET_RESEARCH.md` §10 drew (see that doc's realignment note) — Spike *is* an aggregator, and the PDF has chosen to use one in Phase 1, not defer it to Phase 2.
 
 ## 7. Push Notifications
 
-Given the mobile client is Expo: use the **Expo Push Notification Service**. It wraps FCM (Android) and APNs (iOS) behind one API and one set of credentials, which is materially less setup than managing FCM/APNs tokens directly — and Bonaca's notification needs (an Insight/anomaly fired → push the Primary Member) don't require any FCM/APNs-specific feature Expo's service lacks. Reassess only if a specific future need (e.g., very high-volume notification fan-out, or platform-specific rich-notification features Expo's API doesn't expose) requires it — not a present concern.
+Given the mobile client is Expo: use the **Expo Push Notification Service**. It wraps FCM (Android) and APNs (iOS) behind one API and one set of credentials, which is materially less setup than managing FCM/APNs tokens directly — and Bonaca's notification needs (an Insight/anomaly fired → push the Secondary Member who's monitoring that data) don't require any FCM/APNs-specific feature Expo's service lacks. Reassess only if a specific future need (e.g., very high-volume notification fan-out, or platform-specific rich-notification features Expo's API doesn't expose) requires it — not a present concern.
 
 ## 8. Hosting & CI/CD
 
@@ -109,10 +120,12 @@ Given the mobile client is Expo: use the **Expo Push Notification Service**. It 
 To actually measure the PRD's Success Metrics from day one:
 
 - **Sentry**: crash/error reporting with first-class React Native support — answers "what broke and where."
-- **PostHog**: product analytics — funnels, event tracking, session replay; free tier is generous (100x the session replays, 200x the events of Sentry's free analytics tier) which matters pre-revenue. Use it to directly instrument the PRD's four Success Metrics: invite-to-connect activation (funnel: Invite sent → Secondary Member Connect Wearable complete), weekly engagement (Home/Member Details view events), trial→paid conversion (subscription state-change events, tracked separately at the *second* renewal per `MARKET_RESEARCH.md` §6's retention-gap finding), and anomaly-to-acknowledgement time (timestamp delta between an `anomaly`-kind `Insight`'s Notification firing and being opened).
+- **PostHog**: product analytics — funnels, event tracking, session replay; free tier is generous (100x the session replays, 200x the events of Sentry's free analytics tier) which matters pre-revenue. Use it to directly instrument the PRD's four Success Metrics: invite-to-connect activation (funnel: Invite sent → Primary Member's wearable connected, per `docs/PRD.pdf`'s Flow A/B onboarding), weekly engagement (Home/Member Details view events), trial→paid conversion (subscription state-change events, tracked separately at the *second* renewal per `MARKET_RESEARCH.md` §6's retention-gap finding), and anomaly-to-acknowledgement time (timestamp delta between an `anomaly`-kind `Insight`'s Notification firing and being opened).
 - Both have generous free tiers suited to pre-revenue/early-revenue stage; no cost concern blocking adoption from day one.
 
 ## 10. Security & Compliance
+
+*(Encryption/secrets bullets below describe the Supabase path that wasn't taken — the actual custom backend needs its own equivalent: TLS + Postgres encryption-at-rest on whatever host it's deployed to per `docs/TECHNICAL/BACKEND_CUSTOM_IMPLEMENTATION.md` §8, and secrets in Doppler or the host's own secrets store, not a Supabase-specific one. The DPDP/compliance bullets are platform-independent and still accurate.)*
 
 - **Encryption**: Supabase Postgres encrypts data at rest by default; all client↔Supabase traffic is TLS. No additional work needed for baseline encryption-in-transit/at-rest — verify this is enabled (it is, by default) rather than building anything custom.
 - **Secrets management**: Supabase Edge Function secrets (MSG91 API key, RevenueCat webhook secret, Razorpay keys) via Supabase's built-in secrets store — never commit to the repo, never hardcode in the Expo client bundle (anything in client code is extractable).
@@ -120,6 +133,8 @@ To actually measure the PRD's Success Metrics from day one:
 - **DPDP consent**: per the PRD's NFR, build Bonaca's own granular consent UI (separate toggles for service delivery vs. personalized insights vs. family sharing) now; do not attempt to become a registered DPDP "Consent Manager" yourselves (a heavy, separately regulated role) — integrate with a third-party registered Consent Manager once that ecosystem matures, as `MARKET_RESEARCH.md` §9 already recommends.
 
 ## 11. Repo/Team Structure
+
+*(Describes the planned Supabase layout — the actual repo structure is `backend/` (Java/Spring Boot, Maven) alongside `src/` (Expo app), not a `supabase/` directory. Kept for the "why single repo" reasoning, which still holds.)*
 
 **Single repo, evolving as the team grows** — no premature split:
 - Keep the existing Expo app at the repo root (`src/`, `app.json`, etc., unchanged).
@@ -129,14 +144,16 @@ To actually measure the PRD's Success Metrics from day one:
 
 ## 12. Build Sequencing — "First Review Model" Milestones
 
+*(Written against the original Supabase/HealthKit-Health-Connect/RevenueCat plan — milestone shape is still a reasonable sequencing guide, but M0/M1/M4 below reference platform choices that have since changed. Not rewritten line-by-line; treat the milestone **order** as the still-useful part.)*
+
 A concrete, ordered list to get something genuinely reviewable as fast as possible without skipping the things that are expensive to retrofit (RLS, DLT registration, the confidence-scored insight model):
 
-- **M0 — Foundation**: Supabase project (Mumbai region) + schema migrations matching `src/types/index.ts` + RLS policies enforcing the Account/Member/SharingGrant visibility model; MSG91 DLT entity/template registration (start this immediately — it has multi-day lead time); `request-otp`/`verify-otp` Edge Functions; wire the existing `(auth)` routes (Login, OTP, Incorrect OTP, Resend OTP, Complete Profile) to real auth instead of `ScreenPlaceholder`.
-- **M1 — Wearable connect + sync**: real HealthKit/Health Connect calls in `src/lib/health/appleHealth.ts` / `healthConnect.ts` (replacing the stubs); background sync task on the parent-side install; wearable-ingest Edge Function; wire Connect Wearable, Select Wearable Account, Connection Issue - Retry, and Card - Disconnected to real connection state.
-- **M2 — Read paths**: Home (Primary/Secondary), Member Details (Vitals/Activity/Behaviour tabs), Metric Details (1D/7D/4W/1Y) wired to real `metric_readings` + rollup tables; Pin/Unpin, Edit Nick Name, Hidden Members as real mutations. **This is the first genuinely demoable slice** — real data flowing from a parent's wearable to a child's screen — and a reasonable point to call the "first review model" complete.
-- **M3 — Insights & Notifications**: confidence-scored anomaly detection (time-window collapse + severity scoring per the PRD's NFR) generating real `Insight` rows with regulatory-safe copy templates; Expo push wired to real Notifications with deep-linking into Metric Details.
-- **M4 — Monetization**: RevenueCat integration; StoreKit (iOS) + Play Billing (Android default) + Google User Choice Billing/Razorpay (India Android); Free Trial/expiring/expired banner logic wired to real `Subscription` state; Payment Gateway screen wired to real entitlements.
-- **M5 — Permissions & Invite**: Invite flow creating real `Invite`/`Member` rows; Edit Permissions wired to real `SharingGrant` CRUD; DPDP consent UI (separate toggles per the §10 requirement) surfaced as part of onboarding and the Edit Permissions screen.
+- **M0 — Foundation**: ~~Supabase project~~ backend schema/migrations matching the realigned domain model (Primary/Secondary, no Tertiary) + an authorization layer enforcing the Account/Member/SharingGrant visibility model — **already built** (custom Java backend, `backend/.../auth` and `.../members`), but using the old role/scope naming, not yet realigned. MSG91 DLT entity/template registration (confirm status — has multi-day lead time). `(auth)` routes are wired to real auth already.
+- **M1 — Wearable connect + sync**: **rewritten** — integrate the Spike API (per `docs/PRD.pdf` §3.1) instead of native HealthKit/Health Connect calls; no parent-side background sync task needed since Spike syncs from the vendor's cloud. Wire Connect Wearable, Select Wearable Account, Connection Issue - Retry, and Card - Disconnected to real Spike connection state.
+- **M2 — Read paths**: Home (Primary/Secondary), Member Details (Vitals/Activity/Behaviour tabs), Metric Details (now **24h/7d/30d** per `docs/PRD.pdf` §10, not 1D/7D/4W/1Y) wired to real `metric_readings` + rollup tables; Pin/Unpin, Edit Nick Name, Hidden Members as real mutations — **partially built** (Pin/Unpin, Edit Nick Name, Hidden Members, Home read-path exist; metric data is still mocked, no Spike integration yet).
+- **M3 — Insights & Notifications**: confidence-scored anomaly detection (time-window collapse + severity scoring) generating real `Insight` rows with regulatory-safe copy templates; Expo push wired to real Notifications with deep-linking into Metric Details. Not started.
+- **M4 — Monetization**: **rewritten** — cards (global) + UPI only per `docs/PRD.pdf` §6, flat ₹249/month; **iOS StoreKit conflict unresolved, see §5** before building. Free Trial (now **7 days**, not 5+) /expiring/expired banner logic wired to real `Subscription` state; Payment Gateway screen wired to real entitlements; trial requires a payment method upfront and is interleaved into onboarding (Flow A/B), not a separate later step.
+- **M5 — Permissions & Invite**: **partially built**, using the old model — Invite flow creates real `Invite`/`Member` rows but with no 2-Secondary-Member cap; Edit Permissions wired to real `SharingGrant` CRUD but with role-dependent defaults, a 4th `location` scope, and a batched Save step, none of which match `docs/PRD.pdf` §11 (all-on-by-default, instant-apply, 3 scopes, 2-member cap). DPDP consent UI not yet built.
 
 M0–M2 is the recommended target for the "first review model" the founder asked for — it proves the hardest, most novel part of the product (cross-device wearable data flowing through a real backend into the family dashboard) without yet needing payments or notification-tuning work, both of which are easier to iterate on once the core data pipeline is proven.
 

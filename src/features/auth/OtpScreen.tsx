@@ -1,15 +1,16 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/features/auth/AuthContext';
 import { BackButton } from '@/features/auth/components/BackButton';
 import { OtpInput } from '@/features/auth/components/OtpInput';
+import { ApiError, requestOtp } from '@/lib/api';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 const RESEND_COUNTDOWN_SECONDS = 30;
-const MOBILE_NUMBER = '9742657712';
 const OTP_LENGTH = 4;
 
 function formatCountdown(seconds: number) {
@@ -23,9 +24,12 @@ function formatCountdown(seconds: number) {
 export function OtpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { login } = useAuth();
+  const { phoneNumber } = useLocalSearchParams<{ phoneNumber: string }>();
   const [digits, setDigits] = useState<string[]>(['', '', '', '']);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_COUNTDOWN_SECONDS);
-  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -36,24 +40,37 @@ export function OtpScreen() {
   }, [secondsLeft]);
 
   const handleChange = (next: string[]) => {
-    setHasError(false);
+    setErrorMessage(null);
     setDigits(next);
 
     const code = next.join('');
     if (code.length === OTP_LENGTH) {
-      // Stubbed verification: any code other than 1234 is treated as incorrect.
-      if (code === '1234') {
-        router.push('/(auth)/complete-profile');
-      } else {
-        setHasError(true);
-      }
+      void verify(code);
     }
   };
 
-  const handleResend = () => {
+  const verify = async (code: string) => {
+    setIsVerifying(true);
+    try {
+      const { profileCompleted } = await login(phoneNumber, code);
+      router.push(profileCompleted ? '/(tabs)/home' : '/(auth)/complete-profile');
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : 'Could not verify OTP. Please try again.');
+      setDigits(['', '', '', '']);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
     setSecondsLeft(RESEND_COUNTDOWN_SECONDS);
-    setHasError(false);
+    setErrorMessage(null);
     setDigits(['', '', '', '']);
+    try {
+      await requestOtp(phoneNumber);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : 'Could not resend OTP. Please try again.');
+    }
   };
 
   return (
@@ -73,13 +90,14 @@ export function OtpScreen() {
         <View style={styles.titleBlock}>
           <Text style={styles.title}>Verify OTP</Text>
           <Text style={styles.subtitle}>
-            OTP sent to <Text style={styles.subtitleStrong}>{MOBILE_NUMBER}</Text>
+            OTP sent to <Text style={styles.subtitleStrong}>{phoneNumber}</Text>
           </Text>
         </View>
 
-        <OtpInput value={digits} onChange={handleChange} hasError={hasError} />
+        <OtpInput value={digits} onChange={handleChange} hasError={errorMessage !== null} />
 
-        {hasError && <Text style={styles.errorText}>Enter a valid OTP</Text>}
+        {isVerifying && <ActivityIndicator />}
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
         {secondsLeft > 0 ? (
           <Text style={styles.statusText}>Resend OTP in {formatCountdown(secondsLeft)}</Text>

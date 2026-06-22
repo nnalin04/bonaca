@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: bonaca
+      POSTGRES_USER: bonaca
+      POSTGRES_PASSWORD: bonaca_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - bonaca-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  bonaca-postgres-data:

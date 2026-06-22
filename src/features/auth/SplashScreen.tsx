@@ -5,20 +5,35 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useAuth } from '@/features/auth/AuthContext';
 import { Colors } from '@/theme/tokens';
 
 const AUTO_ADVANCE_DELAY_MS = 1800;
 
 export function SplashScreen() {
   const router = useRouter();
+  const { isLoading, isAuthenticated, profileCompleted } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/(auth)/login');
+      // Wait for AuthProvider to finish restoring (or failing to restore) a stored session
+      // before deciding where to go — routing to /login first would flash the login screen
+      // even for an already-authenticated user.
+      if (isLoading) return;
+      if (!isAuthenticated) {
+        router.replace('/(auth)/login');
+      } else if (!profileCompleted) {
+        // A session can be restored (valid tokens) without onboarding ever finishing, e.g. the
+        // app was killed between OTP verify and Complete Profile — land back there, not Home,
+        // which would otherwise fail every member fetch with a raw "Complete your profile first".
+        router.replace('/(auth)/complete-profile');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     }, AUTO_ADVANCE_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, isLoading, isAuthenticated, profileCompleted]);
 
   return (
     <LinearGradient

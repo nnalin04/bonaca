@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bonaca
+    username: bonaca
+    password: bonaca_dev_only
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+bonaca:
+  jwt:
+    # Dev-only default secret, generated locally — never use this value outside local dev.
+    # Override with the JWT_SECRET env var in any non-local environment.
+    secret: ${JWT_SECRET:s98slO6+8H7jnfAEqBtcK2/mHLRsCR+LxQYTL+6nRLsTJxNIhk7drE6r5k6u/0NhM25g5juzLTj0r+0fjJJZJQ==}
+    access-token-ttl-minutes: 15
+    refresh-token-ttl-days: 30
+  otp:
+    code-length: 4
+    ttl-minutes: 5
+    max-verify-attempts: 5
+    max-requests-per-hour: 5
+  metrics:
+    # 02:00 daily — see MetricsRollupScheduler and docs/TECHNICAL/METRICS_IMPLEMENTATION_PLAN.md §3.2
+    rollup-cron: "0 0 2 * * *"
+  subscriptions:
+    # 03:00 daily — see SubscriptionLifecycleScheduler and docs/TECHNICAL/SUBSCRIPTIONS_IMPLEMENTATION_PLAN.md §5
+    lifecycle-cron: "0 0 3 * * *"
+  notifications:
+    # 04:00 daily — after metrics (02:00) and subscriptions (03:00), see NotificationsRollupScheduler
+    # and docs/TECHNICAL/NOTIFICATIONS_IMPLEMENTATION_PLAN.md §3
+    rollup-cron: "0 0 4 * * *"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+logging:
+  level:
+    com.bonaca.backend.auth.service.otp: INFO

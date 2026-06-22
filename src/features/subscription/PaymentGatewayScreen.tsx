@@ -1,17 +1,18 @@
-import { IconChevronLeft, IconCreditCardPay } from '@tabler/icons-react-native';
+import { IconChevronLeft, IconCircleCheck, IconCreditCardPay } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/features/auth/AuthContext';
+import { useMembers } from '@/features/members';
+import { ApiError, getSubscription, mockPay } from '@/lib/api';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
+import type { SubscriptionResponse } from '@/types/subscriptions';
 
-export type PaymentGatewayVariant = 'trial-signup' | 'renewal';
+type PaymentGatewayVariant = 'trial-signup' | 'renewal' | 'active';
 
-interface PaymentGatewayScreenProps {
-  variant?: PaymentGatewayVariant;
-}
-
-const copyByVariant: Record<PaymentGatewayVariant, { title: string; body: string; cta: string }> = {
+const copyByVariant: Record<PaymentGatewayVariant, { title: string; body: string; cta?: string }> = {
   'trial-signup': {
     title: 'Payment Gateway',
     body: 'Add a payment method to keep monitoring active after your free trial ends.',
@@ -22,11 +23,61 @@ const copyByVariant: Record<PaymentGatewayVariant, { title: string; body: string
     body: 'Renew your subscription to keep monitoring all your connected family members.',
     cta: 'Renew Subscription',
   },
+  active: {
+    title: 'Payment Gateway',
+    body: 'Your subscription is active — all your connected family members are being monitored.',
+  },
 };
 
-export function PaymentGatewayScreen({ variant = 'trial-signup' }: PaymentGatewayScreenProps) {
+function variantForStatus(status: SubscriptionResponse['status']): PaymentGatewayVariant {
+  if (status === 'trial') return 'trial-signup';
+  if (status === 'active') return 'active';
+  return 'renewal';
+}
+
+export function PaymentGatewayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { accessToken } = useAuth();
+  const { self } = useMembers();
+  const [subscription, setSubscription] = useState<SubscriptionResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!accessToken || !self) return;
+    getSubscription(accessToken, self.accountId)
+      .then((result) => {
+        if (!cancelled) setSubscription(result);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setErrorMessage(error instanceof ApiError ? error.message : 'Could not load your subscription.');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, self]);
+
+  const handlePay = async () => {
+    if (!accessToken || !self) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      setSubscription(await mockPay(accessToken, self.accountId));
+      router.back();
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : 'Payment could not be completed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const variant = subscription ? variantForStatus(subscription.status) : 'trial-signup';
   const copy = copyByVariant[variant];
 
   return (
@@ -42,26 +93,45 @@ export function PaymentGatewayScreen({ variant = 'trial-signup' }: PaymentGatewa
         </Pressable>
       </View>
 
-      <View style={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
-        <Text style={styles.title}>{copy.title}</Text>
-        <IconCreditCardPay size={64} color={Colors.iconMuted} strokeWidth={1.5} />
-        <Text style={styles.body}>{copy.body}</Text>
-        <Text style={styles.note}>
-          Payment processing (UPI, PayPal, American Express, Mastercard, Apple Pay) isn&rsquo;t
-          wired up yet — this is a placeholder until the payment-method picker is built.
-        </Text>
+      {isLoading ? (
+        <ActivityIndicator style={styles.loading} />
+      ) : (
+        <View style={[styles.content, { paddingBottom: insets.bottom + 24 }]}>
+          <Text style={styles.title}>{copy.title}</Text>
+          {variant === 'active' ? (
+            <IconCircleCheck size={64} color={Colors.accent} strokeWidth={1.5} />
+          ) : (
+            <IconCreditCardPay size={64} color={Colors.iconMuted} strokeWidth={1.5} />
+          )}
+          <Text style={styles.body}>{copy.body}</Text>
 
-        <Pressable
-          style={styles.cta}
-          onPress={() => {
-            // Stub: payment processing is not implemented yet (see CLAUDE.md Tech Stack).
-            // Wiring to RevenueCat / StoreKit / Razorpay is a separate, explicitly-scoped task.
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={copy.cta}>
-          <Text style={styles.ctaLabel}>{copy.cta}</Text>
-        </Pressable>
-      </View>
+          {errorMessage ? (
+            <Text style={styles.errorNote}>{errorMessage}</Text>
+          ) : (
+            copy.cta && (
+              <Text style={styles.note}>
+                Test mode — tapping {copy.cta.toLowerCase()} simulates a successful payment. Real
+                payment processing isn&rsquo;t wired up yet.
+              </Text>
+            )
+          )}
+
+          {copy.cta && (
+            <Pressable
+              style={[styles.cta, isSubmitting && styles.ctaDisabled]}
+              onPress={() => void handlePay()}
+              disabled={isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel={copy.cta}>
+              {isSubmitting ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.ctaLabel}>{copy.cta}</Text>
+              )}
+            </Pressable>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -80,6 +150,9 @@ const styles = StyleSheet.create({
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  loading: {
+    marginTop: 48,
   },
   content: {
     flex: 1,
@@ -110,6 +183,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
   },
+  errorNote: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.error,
+    textAlign: 'center',
+  },
   cta: {
     marginTop: 16,
     height: 56,
@@ -118,6 +199,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  ctaDisabled: {
+    opacity: 0.6,
   },
   ctaLabel: {
     fontFamily: Fonts.family,

@@ -3,11 +3,13 @@ appId: com.anonymous.bonaca
 - runFlow: _login-to-home.yaml
 
 # --- Home header icons (push navigation, own back button) ---
+# Notifications now reads the real backend (docs/TECHNICAL/NOTIFICATIONS_IMPLEMENTATION_PLAN.md)
+# -- a freshly-onboarded test account genuinely has zero notifications, so this asserts the real
+# empty state rather than the old hardcoded mock content.
 - tapOn: "Open notifications"
 - extendedWaitUntil:
-    visible: ".*Mom.*"
+    visible: "No notifications yet"
     timeout: 10000
-- assertVisible: ".*Subscription expiring soon.*"
 - tapOn: "Go back"
 - extendedWaitUntil:
     visible: "Shared with you"
@@ -39,7 +41,7 @@ appId: com.anonymous.bonaca
     timeout: 3000
 - tapOn: ".*Notifications, tab.*"
 - extendedWaitUntil:
-    visible: ".*Mom.*"
+    visible: "No notifications yet"
     timeout: 10000
 - tapOn: ".*Profile, tab.*"
 - extendedWaitUntil:

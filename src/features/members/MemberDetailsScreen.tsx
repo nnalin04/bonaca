@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/features/auth/AuthContext';
 import { MemberDetailsHeader } from '@/features/members/components/MemberDetailsHeader';
 import {
   MemberTabBar,
@@ -11,6 +12,7 @@ import {
 import { MetricCard } from '@/features/members/components/MetricCard';
 import { MetricCardRow } from '@/features/members/components/MetricCardRow';
 import { MiniSparkline } from '@/features/members/components/MiniSparkline';
+import { NicknameModal } from '@/features/members/components/NicknameModal';
 import { SleepWeekBars } from '@/features/members/components/SleepWeekBars';
 import { SelectModal } from '@/features/onboarding/components/SelectModal';
 import {
@@ -25,8 +27,10 @@ import {
   formatTrendLabel,
   metricDisplayConfig,
 } from '@/features/members/metricDisplay';
+import { getMember, updateMember } from '@/lib/api/members';
 import { Colors, Fonts } from '@/theme/tokens';
 import type { MetricReading } from '@/types';
+import type { MemberResponse } from '@/types/members';
 
 interface MemberDetailsScreenProps {
   memberId: string;
@@ -47,18 +51,58 @@ const sparklineAxisLabels: Partial<Record<MetricReading['metricType'], string[]>
 export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { accessToken } = useAuth();
   const [activeTab, setActiveTab] = useState<MemberDetailsTab>('vitals');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
+  const [member, setMember] = useState<MemberResponse | null>(null);
+
+  const refreshMember = useCallback(async () => {
+    if (!accessToken) return;
+    setMember(await getMember(accessToken, memberId));
+  }, [accessToken, memberId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!accessToken) return;
+    getMember(accessToken, memberId).then((result) => {
+      if (!cancelled) setMember(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, memberId]);
+
+  const displayName = member?.nickname ?? member?.name ?? mockMember.nickname ?? mockMember.name;
+  // Metric content below (Vitals/Activity/Behaviour tabs) is still mock data — real wearable
+  // sync (TRD M1/M2) isn't built yet; this phase only wires member identity/permissions.
 
   const menuOptions = [
-    mockMember.pinned ? 'Unpin from top' : 'Pin to top',
+    member?.pinned ? 'Unpin from top' : 'Pin to top',
     'Edit Nick Name',
+    'Edit Permissions',
     'Hidden Members',
   ];
 
-  // memberId isn't yet wired to a real data source — mock data always represents the same
-  // "Dad" member from the Figma design until a backend exists (see CLAUDE.md "Not Set Up Yet").
-  void memberId;
+  const handleMenuSelect = async (option: string) => {
+    if (!accessToken || !member) return;
+    if (option === 'Pin to top' || option === 'Unpin from top') {
+      await updateMember(accessToken, memberId, { pinned: !member.pinned });
+      await refreshMember();
+    } else if (option === 'Edit Nick Name') {
+      setNicknameModalVisible(true);
+    } else if (option === 'Edit Permissions') {
+      router.push(`/members/${memberId}/permissions`);
+    } else if (option === 'Hidden Members') {
+      router.push('/members/hidden');
+    }
+  };
+
+  const handleSaveNickname = async (nickname: string) => {
+    if (!accessToken) return;
+    await updateMember(accessToken, memberId, { nickname });
+    await refreshMember();
+  };
 
   const goToMetric = (reading: MetricReading) =>
     router.push(`/member/${memberId}/metric/${reading.metricType}`);
@@ -214,8 +258,8 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
     <View style={styles.screen}>
       <MemberDetailsHeader
         avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
-        displayName={mockMember.nickname ?? mockMember.name}
-        statusMessage={mockMember.statusMessage}
+        displayName={displayName}
+        statusMessage={member?.statusMessage ?? mockMember.statusMessage}
         onPressBack={() => router.back()}
         onPressMenu={() => setMenuVisible(true)}
       />
@@ -241,8 +285,15 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         visible={menuVisible}
         title="Member Options"
         options={menuOptions}
-        onSelect={() => {}}
+        onSelect={(option) => void handleMenuSelect(option)}
         onClose={() => setMenuVisible(false)}
+      />
+
+      <NicknameModal
+        visible={nicknameModalVisible}
+        initialValue={displayName}
+        onSave={(nickname) => void handleSaveNickname(nickname)}
+        onClose={() => setNicknameModalVisible(false)}
       />
     </View>
   );

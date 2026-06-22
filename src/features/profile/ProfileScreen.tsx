@@ -9,39 +9,26 @@ import {
 } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
 import type { ComponentType } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/features/auth/AuthContext';
+import { useMembers } from '@/features/members';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { ProfileSummaryCard } from '@/features/profile/components/ProfileSummaryCard';
 import { SettingsListCard } from '@/features/profile/components/SettingsListCard';
 import { SettingsListItem } from '@/features/profile/components/SettingsListItem';
 import { WearableConnectCard } from '@/features/profile/components/WearableConnectCard';
 import { WearableConnectedCard } from '@/features/profile/components/WearableConnectedCard';
+import { getMe } from '@/lib/api';
 import { Colors } from '@/theme/tokens';
-import type { Member, WearableConnection } from '@/types';
+import type { WearableConnection } from '@/types';
 
-// Mock "current user" — mirrors the local hardcoded pattern used in HomeScreen.tsx.
-// Swap `role` to 'secondary' to preview the Secondary Member variant during dev.
-// Note: per the real Figma design (node 197:5921), the Secondary variant renders
-// the exact same settings rows as Primary (197:4003) — only the profile summary
-// (name/avatar/phone) differs. There is no row-level gating by role on this screen.
-const currentMember: Member = {
-  id: 'member-self',
-  accountId: 'account-self',
-  role: 'primary',
-  name: 'Prasanna Kumar',
-  pinned: true,
-  hidden: false,
-};
-
-const secondaryMemberName = 'Rakesh P Kumar';
-
-const currentMemberPhone = '+91 97426 59964';
-
+// Wearable connection state isn't backed by any API yet — wearable sync needs the Spike API
+// integration (a paid third-party service, not yet built; see
+// docs/TECHNICAL/BACKEND_STATUS_AND_NEXT_STEPS.md §5.2). Always "not connected" for now.
 const wearableConnection: WearableConnection | null = null;
-// Example of a connected state, used when wearableConnection is non-null:
-// { id: 'w1', memberId: 'member-self', provider: 'fitbit', status: 'connected', lastSyncedAt: new Date().toISOString() };
 
 const providerLabels: Record<WearableConnection['provider'], string> = {
   'apple-health': 'Apple Health',
@@ -62,20 +49,42 @@ interface SettingsRowConfig {
 export function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isPrimary = currentMember.role === 'primary';
-  const displayName = isPrimary ? currentMember.name : secondaryMemberName;
+  const { accessToken } = useAuth();
+  const { self } = useMembers();
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!accessToken) return;
+    getMe(accessToken).then((result) => {
+      if (!cancelled) setPhoneNumber(result.phoneNumber);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
 
   // Per the real Figma design (197:5921 Secondary vs 39:2025 Primary), these
   // rows are identical across both roles — no role-based gating on this screen.
   const settingsRows: SettingsRowConfig[] = [
-    { key: 'members', icon: IconListCheck, label: 'Members & Permissions', onPress: () => {} },
+    {
+      key: 'members',
+      icon: IconListCheck,
+      label: 'Members & Permissions',
+      onPress: () => router.push('/members'),
+    },
     {
       key: 'subscription',
       icon: IconCash,
       label: 'Manage Subscription',
       onPress: () => router.push('/subscription/payment-gateway'),
     },
-    { key: 'hidden-members', icon: IconUsers, label: 'Hidden Members', onPress: () => {} },
+    {
+      key: 'hidden-members',
+      icon: IconUsers,
+      label: 'Hidden Members',
+      onPress: () => router.push('/members/hidden'),
+    },
     {
       key: 'documentation',
       icon: IconFileDescription,
@@ -106,8 +115,8 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}>
         <ProfileSummaryCard
           avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
-          name={displayName}
-          phoneNumber={currentMemberPhone}
+          name={self?.nickname ?? self?.name ?? ''}
+          phoneNumber={phoneNumber ?? ''}
           onPress={() => {
             // Profile Details drill-down — not yet built, no-op for now.
           }}

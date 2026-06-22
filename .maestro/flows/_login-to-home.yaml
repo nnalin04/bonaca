@@ -1,7 +1,7 @@
 appId: com.anonymous.bonaca
 ---
 - launchApp:
-    clearState: true
+    clearState: false
 - extendedWaitUntil:
     visible: "Send OTP"
     timeout: 40000

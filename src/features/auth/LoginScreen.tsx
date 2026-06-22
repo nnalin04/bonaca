@@ -1,19 +1,36 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthHero } from '@/features/auth/components/AuthHero';
 import { MobileNumberField } from '@/features/auth/components/MobileNumberField';
 import { PrimaryButton } from '@/features/auth/components/PrimaryButton';
+import { ApiError, requestOtp } from '@/lib/api';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 export function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [mobileNumber, setMobileNumber] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const canSubmit = mobileNumber.length === 10;
+  const canSubmit = mobileNumber.length === 10 && !isSubmitting;
+
+  const handleSubmit = async () => {
+    const phoneNumberE164 = `+91${mobileNumber}`;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      await requestOtp(phoneNumberE164);
+      router.push({ pathname: '/(auth)/otp', params: { phoneNumber: phoneNumberE164 } });
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : 'Could not send OTP. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -31,13 +48,14 @@ export function LoginScreen() {
         </View>
 
         <MobileNumberField countryCode="+91" value={mobileNumber} onChangeText={setMobileNumber} />
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
         <View style={[styles.ctaBlock, { paddingBottom: insets.bottom + 16 }]}>
-          <PrimaryButton
-            label="Send OTP"
-            disabled={!canSubmit}
-            onPress={() => router.push('/(auth)/otp')}
-          />
+          {isSubmitting ? (
+            <ActivityIndicator />
+          ) : (
+            <PrimaryButton label="Send OTP" disabled={!canSubmit} onPress={handleSubmit} />
+          )}
           <Pressable accessibilityRole="link" accessibilityLabel="Privacy Policy">
             <Text style={styles.privacyLink}>Privacy Policy</Text>
           </Pressable>
@@ -79,6 +97,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: Colors.textSecondary,
+  },
+  errorText: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 13,
+    lineHeight: 18,
+    color: Colors.error,
+    textAlign: 'center',
   },
   ctaBlock: {
     marginTop: 'auto',

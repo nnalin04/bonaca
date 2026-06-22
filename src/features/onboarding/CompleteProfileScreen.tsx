@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/features/auth/AuthContext';
 import { PrimaryButton } from '@/features/auth/components/PrimaryButton';
 import { DateOfBirthModal } from '@/features/onboarding/components/DateOfBirthModal';
 import { OnboardingHeader } from '@/features/onboarding/components/OnboardingHeader';
 import { ProfileAvatar } from '@/features/onboarding/components/ProfileAvatar';
 import { ProfileField } from '@/features/onboarding/components/ProfileField';
 import { SelectModal } from '@/features/onboarding/components/SelectModal';
+import { ApiError, completeProfile } from '@/lib/api';
 import { Colors } from '@/theme/tokens';
 
 interface ProfileFormState {
@@ -17,6 +19,20 @@ interface ProfileFormState {
   dob: string;
   height: string;
   weight: string;
+}
+
+/** Parses a "5ft 11in" label (see HEIGHT_OPTIONS below) into whole centimeters. */
+function parseHeightCm(label: string): number | undefined {
+  const match = /^(\d+)ft (\d+)in$/.exec(label);
+  if (!match) return undefined;
+  const totalInches = Number(match[1]) * 12 + Number(match[2]);
+  return Math.round(totalInches * 2.54);
+}
+
+/** Parses a "70 Kg" label (see WEIGHT_OPTIONS below) into whole kilograms. */
+function parseWeightKg(label: string): number | undefined {
+  const match = /^(\d+) Kg$/.exec(label);
+  return match ? Number(match[1]) : undefined;
 }
 
 const EMPTY_FORM: ProfileFormState = {
@@ -64,12 +80,36 @@ function formatDob(day: number, month: number, year: number): string {
 export function CompleteProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { accessToken } = useAuth();
   const [form, setForm] = useState<ProfileFormState>(EMPTY_FORM);
+  const [dobIso, setDobIso] = useState<string | undefined>(undefined);
   const [activeModal, setActiveModal] = useState<
     'gender' | 'dob' | 'height' | 'weight' | null
   >(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isComplete = Boolean(form.name && form.gender && form.dob);
+
+  const handleContinue = async () => {
+    if (!accessToken) return;
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    try {
+      await completeProfile(accessToken, {
+        name: form.name,
+        gender: form.gender,
+        dob: dobIso,
+        heightCm: form.height ? parseHeightCm(form.height) : undefined,
+        weightKg: form.weight ? parseWeightKg(form.weight) : undefined,
+      });
+      router.push('/(auth)/connect-wearable');
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : 'Could not save your profile. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -120,10 +160,13 @@ export function CompleteProfileScreen() {
           />
         </View>
 
+        {isSubmitting && <ActivityIndicator />}
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
         <PrimaryButton
           label="Continue"
-          disabled={!isComplete}
-          onPress={() => router.push('/(auth)/connect-wearable')}
+          disabled={!isComplete || isSubmitting}
+          onPress={() => void handleContinue()}
         />
       </ScrollView>
 
@@ -153,9 +196,10 @@ export function CompleteProfileScreen() {
       />
       <DateOfBirthModal
         visible={activeModal === 'dob'}
-        onConfirm={({ day, month, year }) =>
-          setForm((prev) => ({ ...prev, dob: formatDob(day, month, year) }))
-        }
+        onConfirm={({ day, month, year }) => {
+          setForm((prev) => ({ ...prev, dob: formatDob(day, month, year) }));
+          setDobIso(`${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+        }}
         onClose={() => setActiveModal(null)}
       />
     </View>
@@ -174,5 +218,9 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 20,
+  },
+  errorText: {
+    color: Colors.error,
+    textAlign: 'center',
   },
 });

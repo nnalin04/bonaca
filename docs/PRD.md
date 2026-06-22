@@ -1,79 +1,186 @@
 # Bonaca — Product Requirements Document
 
-**Source of truth:** Figma file "Bonaca Designs" (`fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens") for every screen/state, and [`docs/MARKET_RESEARCH.md`](MARKET_RESEARCH.md) for the competitive/business decisions referenced in sections 6–8 below. Every requirement is traceable to one of those two documents — none are speculative additions.
+**Source of truth:** [`docs/PRD.pdf`](PRD.pdf) for every product/business rule in this document — this file is a markdown mirror of that PDF (kept in sync so the rest of the docs/codebase can reference it as text), not an independent source. Figma file "Bonaca Designs" (`fileKey YnsqSySyT8WTYeJPwjO6iV`, page "Mobile Screens") remains the source of truth for visual layout, but **the Figma screens and the existing codebase currently use the old, inverted Primary/Secondary terminology and predate this PDF** — see "Realignment note" at the bottom of this file before assuming any screen or code path already matches what's written here.
 
-## 1. Overview
+## 0. Executive Summary
 
-Adult children increasingly live away from their aging parents — in another city or country — and have no easy way to know how their parent is actually doing day to day. Phone calls only catch what a parent chooses (or remembers) to mention; by the time a real problem surfaces, it's often already serious.
+Families don't want raw health data. They want **assurance, context, and early awareness** — without panic.
 
-Bonaca closes that gap by reading the health and activity data already being collected by a parent's wearable (smartwatch, fitness band, or ring — Apple Watch, Fitbit, Garmin, Samsung Galaxy Watch, etc.) and surfacing it to the adult child in a single dashboard: vitals, activity, daily routine, screen time, time spent outdoors, and last known location. The child gets a continuously updated picture of their parent's wellbeing without needing the parent to do anything beyond wearing their device and completing a one-time, low-friction (OTP-only) connection.
+Bonaca enables safe, consent-first family visibility into daily health and routine changes using wearable and behavioural signals, designed especially for **elderly parents living independently** and **adult children living elsewhere (often globally)**.
 
-## 2. Target Users
+## 1. Product Vision & Philosophy
 
-- **Primary Member** — the subscriber and account owner, typically the adult child. Pays for the subscription, invites other members, manages permissions, and can optionally monitor their own metrics too (Home - Primary screen shows "own device card" alongside the family list). Two GTM-relevant variants, both in scope from MVP: **India-resident** (pays via UPI) and **NRI/diaspora** (pays via international card/Apple Pay/PayPal) — market research identified the latter as the highest-willingness-to-pay segment and a gap no India eldercare competitor targets explicitly (`MARKET_RESEARCH.md` §10).
-- **Secondary Member** — typically the parent. Authenticates via phone number + OTP only (no password), completes a minimal profile, and connects their own wearable from their own device (Profile - Secondary Member → Connect Wearable). UX for this role assumes low tech literacy: short flows, large touch targets, no jargon.
-- **Tertiary / invited viewer members** — other family (siblings, other relatives) invited via the Invite flow, granted visibility into specific data scopes only (vitals / activity / behaviour / location) through Edit Permissions, not full account control.
+### 1.1 Vision
 
-## 3. Core User Journeys
+A family health & routine awareness platform that helps people understand how their loved ones are doing day-to-day, without:
 
-1. **Onboarding** — Splash → Login - Mobile No. Entry → Login - OTP (with Incorrect OTP and Login - Resend OTP error/retry states) → Complete Profile → Connect Wearable.
-2. **Connecting a wearable** — Select Wearable Account (list of supported providers) → pairing → Connection Issue - Retry on failure → confirmation Toast. Runs on whichever member's device is physically paired with the wearable (see NFR on HealthKit/Health Connect below) — this is why Secondary Member has its own independent Connect Wearable screen rather than the Primary Member configuring it remotely.
-3. **Inviting a family member** — Primary Member sends an Invite (phone number + role offered); invitee accepts and lands in onboarding as a Tertiary member with default permissions.
-4. **Daily monitoring loop** — Home (Primary or Secondary variant) → tap a family member's card → Member Details (Vitals / Activity / Behaviour tabs: routine adherence, screen time, outdoor time, last active location, Pin/Unpin, Edit Nick Name, Hidden Members for decluttering) → tap a metric → Metric Details (1D/7D/4W/1Y trend chart, min/max, auto-generated insight text, date stepper).
-5. **Alerts and insights → Notifications** — anomaly or trend insights generated against MetricReading data surface as Notifications, deep-linking into the relevant Metric Details screen.
-6. **Subscription lifecycle** — Free Trial (target **5+ days**, not a 1–3 day teaser — published conversion data for comparable consumer subscriptions shows 5+ day trials convert at ~44–45% vs. ~30% for shorter trials; see `MARKET_RESEARCH.md` §6) → Banner - Subscription expiring soon → Banner - Subscription expired → Regular Subscription (Active) or Subscriptions - Cancelled, with Payment Gateway and a payment-method picker (UPI, PayPal, American Express, Mastercard, Apple Pay). Subscription is **account-level**, not per-member — one Primary Member's subscription covers all their connected Secondary/Tertiary members.
-7. **Permission management** — Primary Member uses Edit Permissions to control what each invited member can see (SharingGrant scopes: vitals/activity/behaviour/location); Pin/Unpin and Hidden Members control Home-screen ordering/visibility without affecting underlying access.
+- medicalising daily life
+- creating anxiety or false alarms
+- invading privacy
+- exposing elderly users to coercion or misuse
 
-## 4. Functional Requirements
+The product is about **awareness, not diagnosis**.
 
-Organized by Figma section, with every named state listed explicitly (no state invented or omitted):
+### 1.2 Core Insight
 
-- **Login & Onboarding**: Splash; Login - Mobile No. Entry; Login - OTP; Incorrect OTP (error state); Login - Resend OTP (retry state); Complete Profile (two states — initial entry and pre-filled edit); Connect Wearable.
-- **Notifications**: single feed screen, deep-links into Metric Details.
-- **Connecting a Wearable**: Payment Gateway (two variants — trial signup, renewal); Select Wearable Account (three variants — initial list, mid-flow, retry-entry); Connection Issue - Retry; confirmation Toasts (three variants for connect-success, connect-fail, generic).
-- **Member List / Home - Primary**: own-device card, "Shared with you" family card list, empty state when no members yet connected, Banner - Free Trial / Subscription Active, Card+CTA pattern for "add a member."
-- **Home - Secondary**: parent-facing home variant, Banner - When Trial Expired, own Regular Subscription / Payment Gateway access (parent can also manage billing, not only the child).
-- **Member Details**: Vitals/Activity/Behaviour tabs across 7 distinct content states; Actions - Pin to top / Unpin to top; Actions - Edit Nick Name; Hidden Members list; Card - Disconnected (wearable lost connection — must be visually distinct from a normal data card).
-- **Metric Details**: time-series chart with 1D/7D/4W/1Y range toggle, min/max display, auto-generated insight text, date-stepper navigation.
-- **Profile - Primary Member**: Profile Details, Connect Wearable (for self-monitoring), Documentation (help/legal), Member list management, Drawer navigation, Edit Permissions, Subscriptions (two states — has plan / management view).
-- **Profile - Secondary Member**: Profile Details, Connect Wearable, Documentation, full Subscriptions state machine — Subscriptions / Subscriptions - Empty / Subscriptions - Cancelled / Subscriptions - Expired / Subscriptions - Active — plus payment method selector (UPI, PayPal, American Express, Mastercard, Apple Pay).
-- **Banner components** (cross-cutting, appear on Home and Profile): Free Trial, Subscription expiring soon, Subscription expired, Subscription Active, Subscription ended, When Trial Expired.
+Families fundamentally ask **"Is today normal for them?"** — not "What was their heart rate at 3:12 PM?"
 
-## 5. Data Model Sketch
+### 1.3 Phase-1 Principles
 
-Already implemented in `src/types/index.ts` — this section documents intent, not a new design:
+1. Wearable-first for credibility
+2. Behavioural signals for context, not surveillance
+3. Relative comparisons, not medical thresholds
+4. Deterministic, explainable logic (no ML)
+5. Primary-controlled data sharing only
+6. Consent always precedes payment
+7. Paid-only model with free trial
+8. Trust > growth > virality
 
-- `Account` — the subscriber's billing entity, holds a `Subscription`.
-- `Member` — `role: 'primary' | 'secondary' | 'tertiary'`, `pinned`/`hidden` flags for Home ordering.
-- `WearableConnection` — `provider: 'apple-health' | 'health-connect' | 'fitbit' | 'garmin'`, `status: 'connected' | 'disconnected' | 'needs-reauth'`.
-- `MetricReading` — typed by `MetricType` (heart_rate, steps, sleep, screen_time, outdoor_time, routine_adherence, last_active_location), tagged with `sourceDeviceId`.
-- `Insight` — `kind: 'trend' | 'anomaly'`, generated text tied to a metric and date.
-- `Subscription` — account-level, `status: 'trial' | 'active' | 'expiring' | 'expired' | 'cancelled'`.
-- `SharingGrant` — `scope: 'vitals' | 'activity' | 'behaviour' | 'location'`, links a granter to a grantee member.
-- `Notification`, `Invite` — as named.
+## 2. User Roles & Mental Model
 
-**Open gap**: no explicit `PaymentMethod` type yet for UPI/PayPal/Amex/Mastercard/Apple Pay — currently implicit. Add when the Payment Gateway screen is actually implemented; not blocking for this PRD.
+### 2.1 Canonical Roles
 
-## 6. Non-Functional Requirements
+**Primary Member**
+- The person whose data is tracked — typically the **elderly parent / dependent**
+- Owns all data
+- Controls sharing & permissions
+- May be low-tech
 
-- **Wearable data is on-device only — there is no remote API for HealthKit or Health Connect.** Apple HealthKit and Google Health Connect both store data locally to the phone they're installed on; there is no cloud endpoint a child's app can query to read a parent's data directly. This means the Secondary Member's own phone must run Bonaca (or a lightweight sync companion) to read local HealthKit/Health Connect data and push it to a backend, which the Primary Member's app then reads. The Figma design already assumes this — Profile - Secondary Member has its own independent Connect Wearable screen — but it must be called out explicitly so onboarding copy and support flows account for "your parent needs the app installed on their own phone too," which is easy to get wrong.
-- **Fitbit API migration risk**: Fitbit's legacy Web API sunsets in September 2026; existing OAuth tokens do not carry over to its replacement, the Google Health API (`health.googleapis.com/v4`), which requires fresh user re-consent. Any Phase 2 Fitbit integration should be built against the Google Health API directly, not the legacy Fitbit Web API. Garmin and Samsung remain separate, vendor-specific OAuth APIs; a multi-wearable aggregator (e.g. Terra) is a viable build-vs-buy option once more than 2–3 providers are needed.
-- **India DPDP Act 2023 compliance**: because the data subject (parent, Secondary Member) and the account holder (child, Primary Member) are different people, consent must be captured from *both* — the parent must explicitly consent to their health data being collected and shared with named family members, separately from the child's own account-creation consent. Consent must be revocable at any time via an accessible "consent dashboard" (maps naturally onto the existing Edit Permissions screen). Full DPDP enforcement (consent-manager registration, notice, and security obligations) takes effect May 13, 2027 — there is runway, but the consent model should be designed in from MVP rather than retrofitted.
-- **Low-literacy / accessibility UX**: Secondary Member flows (OTP-only auth, Complete Profile, Connect Wearable) must use large touch targets, minimal text, and avoid technical jargon, per the design's phone-number-first approach.
-- **Wearable sync reliability and staleness**: Card - Disconnected and Connection Issue - Retry states must be reachable from real sync failures, not just designed-but-unused; Home/Member Details should visibly indicate when a metric's `lastSyncedAt` is stale.
-- **Chart performance**: Metric Details' 1Y rollup view must remain responsive — this implies pre-aggregation of `MetricReading` rather than client-side rollup of raw readings at query time.
-- **Anomaly alerting without alert fatigue**: Insight generation (`kind: 'anomaly'`) needs a threshold/dedup strategy so Notifications don't overwhelm the Primary Member. Published clinical-monitoring research found 80–99% of alarms in comparable monitoring contexts are noise; the mitigation pattern that worked there — aggregating multiple weak signals into one confidence-scored event rather than alerting on every threshold crossing — cut false alerts up to ~99.3% (`MARKET_RESEARCH.md` §10). Bonaca's `Insight` model should implement this as: (a) a time-window collapse (don't re-alert on the same metric within a cooldown window), (b) a severity/confidence score combining multiple readings before an `anomaly`-kind Insight is created, not a single out-of-range reading. This is the single highest-leverage differentiator identified versus researched competitors, none of which do this.
-- **Regulatory-safe insight copy**: both India's CDSCO and the FDA's SaMD guidance permit "pattern" language ("your mother's resting heart rate has been trending up this week") but treat diagnostic or disease-naming language ("this may indicate arrhythmia") as crossing into medical-device territory, which carries a materially different compliance burden. All `Insight.generatedText` content must be reviewed against this line before shipping copy — see `MARKET_RESEARCH.md` §9 and §10. Treating this constraint transparently (a visible "how we generate insights" explainer to the user) is itself a trust-building differentiator, not just a compliance checkbox.
+**Secondary Member**
+- Family member who views another member's data — typically the **adult child** (often outside India)
+- May be the payer
+- Cannot access anything without explicit consent
 
-## 7. Success Metrics
+Every user is always a Primary Member for their own data. A user may also be a Secondary Member for others.
 
-- Invite-to-connect activation rate (Invite sent → Secondary Member completes Connect Wearable).
-- Weekly engagement (Primary Member opens Home / views a Member Details screen).
-- Trial → paid conversion rate (benchmark target ~44–45% against a 5+ day trial, per `MARKET_RESEARCH.md` §6 — track separately from 6-month retention, which industry data shows typically lands near half the headline conversion number), and time-to-cancel for Subscriptions - Cancelled.
-- Anomaly-to-acknowledgement time (Insight of kind `anomaly` generated → Notification opened).
+There is no Tertiary role — see §9 Flow C for the cap on how many Secondary Members a Primary can share with.
 
-## 8. Phasing Plan
+### 2.2 Mental Model
 
-- **MVP** — Apple HealthKit + Google Health Connect only, via the parent-side sync-companion model described in the NFRs above. Core journeys: onboarding, connect wearable, daily monitoring loop, notifications, account-level billing with UPI-first payment for the India-resident segment **and** international cards/Apple Pay/PayPal live from day one for the NRI-diaspora segment — not a later phase. Market research found no India eldercare competitor (Emoha, Khyaal, Samarth) explicitly targets NRI families despite them being the highest-willingness-to-pay segment, and Bonaca's payment methods are already designed for both in Figma — this is a launch-time positioning decision, not a Phase 2 add-on. Edit Permissions for invited members; confidence-scored anomaly alerting and regulatory-safe insight copy (see NFRs) implemented from MVP, not retrofitted.
-- **Phase 2** — Direct wearable integrations beyond Apple/Google: Google Health API for Fitbit devices (not the legacy Fitbit Web API), Garmin Health API. Evaluate a multi-wearable aggregator (e.g. Terra) once a third or fourth provider is in scope, as a build-vs-buy call against maintaining N separate OAuth integrations.
-- **Future** — Multi-account membership (one Secondary Member shared across multiple Primary Members' accounts), clinician/caregiver professional roles, web dashboard for Primary Members who want a larger-screen view.
+"You always see yourself first. You only see others if they explicitly share."
+
+No access requests, no search/discovery, no social graph.
+
+## 3. Data Sources
+
+### 3.1 Wearable Data (Trial + Paid Only)
+
+- **Source: Spike API** (cloud-based sync; cost incurred per connected device)
+- Devices: Garmin, Fitbit, Samsung, Oura, etc.
+- Used for: Vitals, Sleep, Activity, Training load
+
+This **replaces** the on-device-only Apple HealthKit / Google Health Connect plan in `CLAUDE.md`/`TECHNICAL_REQUIREMENTS.md` — Spike syncs from the vendor's cloud, so there is no longer a hard requirement that the Primary's own phone run Bonaca to sync their data (see Realignment note).
+
+### 3.2 Smartphone Data (Supportive Only)
+
+Used only for behaviour & context: smartphone usage time (daily total), outside time (derived), last active location (context), steps (fallback only).
+
+## 4. Metric Taxonomy
+
+- **Vitals** (wearable only): Heart Rate, HRV, Stress, SpO₂, Respiration, Sleep, Body Temperature, Blood Pressure, ECG (if supported), Blood Glucose (if supported), VO₂ Max.
+- **Activity**: Steps, Calories, Workouts, Training load.
+- **Behaviour** (derived): Routine Consistency, Smartphone usage time, Outside time, Last active location (context only).
+
+## 5. Derived Logic & Baselines
+
+- Rolling baseline over **14–21 valid days**; a day is excluded if the wearable wasn't worn, sync gaps exceed a threshold, or phone data is missing. Baseline recalculated daily.
+- **Comparison language is relative only**: Higher than usual / Same as usual / Lower than usual. No colours, no medical thresholds. (Matches the existing `MetricTrendLabel` union already in `src/types/index.ts` — that part of the domain model already aligns.)
+- **Outside Time**: identify a home cluster, measure time outside it, compare with baseline, output a relative state only.
+- **Routine Consistency Score**: normalizes smartphone usage, outside time, steps, and sleep (if connected) against baseline; behaviour weighted higher than vitals; outputs a stability band — Stable / Slightly different / Noticeably different. Explainable, deterministic, no ML.
+
+## 6. Business Model (Paid-Only)
+
+**No perpetual free tier in Phase-1.** Rationale: core value requires a wearable; phone-only users misjudge the product; Spike + infra costs are real; target users already pay for wearables. Freemium is deferred to a future funded phase, used as top-of-funnel only.
+
+### 6.1 Trial
+
+- **7 days**, full product access, **payment method required upfront** (not 5 days as earlier research-driven drafts assumed).
+- Supported payments: Credit/Debit Cards (global), UPI (India). No PayPal/Apple Pay/Amex-Mastercard-specific handling, no platform/region-split billing rail (StoreKit/Play Billing/Razorpay UCB) — materially simpler than `TECHNICAL_REQUIREMENTS.md` §5 currently describes.
+- UX copy: *"Try the full experience free for 7 days. No charge during trial. Cancel anytime."*
+
+### 6.2 Trial Expiry
+
+- Continued → seamless conversion.
+- Cancelled/lapsed → wearable sync paused, data becomes read-only, copy: *"Health tracking is paused. Restart subscription to continue."* No deletion, no surprise charges.
+
+## 7. Pricing
+
+- **₹249/month**: 1 wearable, full insights, **2 family member sharing** (i.e. up to 2 Secondary Members per Primary). Monthly recurring.
+
+## 8. Consent & Payment Model (Final)
+
+**Consent always comes before payment.** Payment only unlocks already-approved capability — there is no post-payment approval anywhere.
+
+## 9. UX Flows — Payment & Onboarding
+
+**Flow A — Add Yourself (Self-Pay)**: Profile → Add Device → "Connect your wearable — ₹249/month, Try free for 7 days" → Start trial → Connect device → Sync begins.
+
+**Flow B — Add Family Member's Device (Delegated Pay)**: Primary (parent) sees "To connect a wearable, a trusted family member needs to enable this" with a CTA to ask the family member (implicit consent). Secondary (adult child) sees "[Parent's name] wants to connect a wearable," starts the trial → subscription active, then the Primary connects the device.
+
+**Flow C — Add Additional Family Member (up to 2 Secondary Members only)**: Primary invites → Secondary accepts. The invite itself is the consent.
+
+This is a meaningfully different onboarding shape than the existing Complete Profile → Connect Wearable → (later) Invite sequence built so far — payment is now interleaved into onboarding, not a separate later subscription milestone, and there's a hard cap of 2 Secondary Members.
+
+## 10. Core App UX
+
+**Home (Members Overview)**: self first, others only if shared, metric deviation counts, last updated time.
+
+**Member Detail**: daily NLP summary, last active location, metrics grouped & ordered by deviation.
+
+**Metric Detail**: **24h / 7d / 30d** ranges (not the 1D/7D/4W/1Y ranges currently built), graph + explanation, non-medical guidance.
+
+## 11. Permissions Model (Final)
+
+### 11.1 Default Permission
+
+**✅ All access is enabled by default.** Rationale: most families want full visibility, this reduces setup friction, and it matches the emotional intent of sharing. This replaces the narrower default-grant rules implemented so far (which only auto-granted Secondary→Primary by default and required explicit Edit Permissions action for anything wider).
+
+### 11.2 Permission Categories
+
+| Category | Access |
+|---|---|
+| All | Everything |
+| Vitals | Health metrics |
+| Activity | Steps, workouts |
+| Behaviour | Routine, phone usage |
+
+Multi-select supported. **There is no separate "Location" category** — location is context within Behaviour, not its own toggle (the current `SharingScope` type has a 4th `'location'` value that this PDF doesn't have).
+
+### 11.3 Permission Modification UX
+
+A "Manage access for [Name]" screen with checkboxes: All / Vitals / Activity / Behaviour, with individual metrics listed under their category. **Changes apply instantly** — there is no Save step (the Edit Permissions screen built so far uses a batched Save button, which doesn't match this).
+
+## 12. UX Edge Cases
+
+- **Primary revokes access**: Secondary loses access instantly, no payment refund, slot freed.
+- **Subscription lapses**: wearable sync pauses, sharing pauses, old data remains visible read-only.
+- **Device disconnected**: show "No recent data," never show inferred values.
+- **Permission reduced**: Secondary sees "Some data is no longer shared," no prompts, no upsell.
+- **Multiple Secondary Members**: each evaluated independently; permissions are per-Secondary.
+
+## 13. GTM Rationale
+
+Paid-first works because wearable owners already pay, family health is high-intent, paid users give better feedback, there's less noise/better PMF signal, and it allows controlled burn during bootstrap. Freemium is introduced post-funding as top-of-funnel only.
+
+## 14. Non-Goals (Phase-1)
+
+Medical diagnosis, emergency alerts, ML predictions, continuous GPS, doctor marketplace, fear-based nudges.
+
+## 15. One-Line Product Summary
+
+A wearable-first family health awareness platform that helps people understand daily health and routine changes of loved ones — safely, clearly, and without medicalisation.
+
+---
+
+## Realignment note (not part of the PDF — tracking doc/code drift)
+
+This PDF is now authoritative and supersedes conflicting content in `CLAUDE.md`, `docs/TECHNICAL_REQUIREMENTS.md`, `docs/MARKET_RESEARCH.md`, the Figma file's role labeling, and the Members & Sharing backend/frontend already built. None of those have been updated yet. Known conflicts to resolve:
+
+- **Role naming is inverted everywhere else.** Figma screens ("Profile - Primary Member" / "Profile - Secondary Member"), `backend/.../members/MemberRole.java`, `src/types/index.ts`'s `MemberRole`, and every screen built so far treat Primary = adult child/payer, Secondary = parent. This PDF treats Primary = parent/data owner, Secondary = adult child/payer. No Tertiary role exists in this PDF at all.
+- **2-Secondary-Member cap** isn't enforced in `InviteService`.
+- **Trial is 7 days**, not the 5 days in `MembersService.TRIAL_DAYS` / `MARKET_RESEARCH.md`'s 5+-day conversion research.
+- **Permissions default to all-on, applied instantly, 3 categories (All/Vitals/Activity/Behaviour)** — the built `EditPermissionsScreen` has narrower role-dependent defaults, a 4th "Location" scope, and a batched Save button.
+- **Wearable data source is Spike API** (cloud, cross-vendor), not Apple HealthKit/Google Health Connect — this changes the on-device-only NFR and the `src/lib/health/HealthProvider.ts` stub design CLAUDE.md currently documents.
+- **Payment is interleaved into onboarding** (Flow A/B), not a separate later subscription milestone, and trial start requires a payment method upfront — not yet built anywhere.
+- **Metric Detail ranges are 24h/7d/30d**, not 1D/7D/4W/1Y.
+- Payment methods simplify to cards + UPI — `TECHNICAL_REQUIREMENTS.md`'s StoreKit/Play Billing/Razorpay-UCB/RevenueCat platform-split plan is likely overbuilt against this PDF, pending confirmation.
