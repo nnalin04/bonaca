@@ -1,14 +1,8 @@
 import type { Insight, MetricReading, MetricType } from '@/types';
 
-/**
- * Mock data for Metric Details (Figma node 197:1137). Standing in for the future
- * Supabase-backed metric-history fetch — shape mirrors the real domain types so
- * swapping in real data later is a drop-in.
- */
 export interface MetricDetailSummary {
   average: MetricReading;
   chartValues: number[];
-  /** Fixed display scale for the chart's Y-axis labels, per Figma (e.g. Heart Rate shows a rounded "180 bpm"/"75 bpm" scale, not the literal data min/max). Falls back to average.rangeMin/rangeMax when unset. */
   chartAxisMin?: number;
   chartAxisMax?: number;
 }
@@ -36,9 +30,8 @@ function reading(
 }
 
 const heartRateChart = [
-  0.25, 0.3, 0.22, 0.28, 0.2, 0.32, 0.35, 0.4, 0.5, 0.45, 0.42, 0.4, 0.38, 0.55,
-  0.5, 0.6, 0.65, 0.58, 0.7, 0.75, 0.68, 0.8, 1, 0.9, 0.78, 1, 0.6, 0.55, 0.5,
-  0.42,
+  0.25, 0.25, 0.15, 0.15, 0.24, 0.24, 0.12, 0.09, 0.17, 0.11, 0.24, 0.32, 0.44,
+  0.32, 0.32, 0.26, 0.32, 0.38, 0.38, 0.32, 0.47, 0.49, 0.37, 0.25, 0.21, 0.25,
 ];
 
 const defaultChart = [

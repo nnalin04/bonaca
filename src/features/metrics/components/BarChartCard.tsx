@@ -15,6 +15,7 @@ const CHART_WIDTH = 326;
 const CHART_HEIGHT = 280;
 const BAR_WIDTH = 6;
 const BAR_GAP = 6;
+const BAR_START_X = 5;
 
 export function BarChartCard({
   values,
@@ -22,60 +23,66 @@ export function BarChartCard({
   minLabel,
   xAxisLabels,
 }: BarChartCardProps) {
-  const totalBarSpan = values.length * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
-  const startX = Math.max(0, (CHART_WIDTH - totalBarSpan) / 2);
   const gridLineYs = [0, 0.25, 0.5, 0.75, 1].map((t) => t * CHART_HEIGHT);
 
   const verticalGridXs = [CHART_WIDTH / 3, (CHART_WIDTH * 2) / 3];
 
   return (
     <View style={styles.card}>
-      <Text style={styles.maxLabel}>{maxLabel}</Text>
-
-      <Svg width={CHART_WIDTH} height={CHART_HEIGHT} style={styles.chart}>
-        <Rect x={0} y={0} width={CHART_WIDTH} height={CHART_HEIGHT} fill={Colors.chartAreaFill} />
-        {gridLineYs.map((y) => (
-          <Line
-            key={y}
-            x1={0}
-            y1={y}
-            x2={CHART_WIDTH}
-            y2={y}
-            stroke={Colors.cardBorder}
-            strokeWidth={1}
+      <View style={styles.chartFrame}>
+        <Svg width={CHART_WIDTH} height={CHART_HEIGHT} style={styles.chart}>
+          <Rect
+            x={0}
+            y={0}
+            width={CHART_WIDTH}
+            height={CHART_HEIGHT}
+            rx={12}
+            fill={Colors.chartAreaFill}
           />
-        ))}
-        {verticalGridXs.map((x) => (
-          <Line
-            key={x}
-            x1={x}
-            y1={0}
-            x2={x}
-            y2={CHART_HEIGHT}
-            stroke={Colors.cardBorder}
-            strokeWidth={1}
-            strokeDasharray="4,4"
-          />
-        ))}
-        {values.map((value, index) => {
-          const barHeight = Math.max(4, value * CHART_HEIGHT);
-          const x = startX + index * (BAR_WIDTH + BAR_GAP);
-          const y = CHART_HEIGHT - barHeight;
-          return (
-            <Rect
-              key={index}
-              x={x}
-              y={y}
-              width={BAR_WIDTH}
-              height={barHeight}
-              rx={5}
-              fill={Colors.chartLine}
+          {gridLineYs.map((y) => (
+            <Line
+              key={y}
+              x1={0}
+              y1={y}
+              x2={CHART_WIDTH}
+              y2={y}
+              stroke={Colors.chartGrid}
+              strokeWidth={1}
             />
-          );
-        })}
-      </Svg>
+          ))}
+          {verticalGridXs.map((x) => (
+            <Line
+              key={x}
+              x1={x}
+              y1={0}
+              x2={x}
+              y2={CHART_HEIGHT}
+              stroke={Colors.chartGrid}
+              strokeWidth={1}
+              strokeDasharray="4,4"
+            />
+          ))}
+          {values.map((value, index) => {
+            const barHeight = Math.max(4, value * CHART_HEIGHT);
+            const x = BAR_START_X + index * (BAR_WIDTH + BAR_GAP);
+            const y = CHART_HEIGHT - barHeight;
+            return (
+              <Rect
+                key={index}
+                x={x}
+                y={y}
+                width={BAR_WIDTH}
+                height={barHeight}
+                rx={5}
+                fill={Colors.chartLine}
+              />
+            );
+          })}
+        </Svg>
 
-      <Text style={styles.minLabel}>{minLabel}</Text>
+        <Text style={styles.maxLabel}>{maxLabel}</Text>
+        <Text style={styles.minLabel}>{minLabel}</Text>
+      </View>
 
       <View style={styles.xAxisRow}>
         {xAxisLabels.map((label) => (
@@ -91,17 +98,31 @@ export function BarChartCard({
 const styles = StyleSheet.create({
   card: {
     width: '100%',
+    height: 334,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     backgroundColor: Colors.white,
     padding: 16,
-    gap: 4,
+  },
+  chartFrame: {
+    width: CHART_WIDTH,
+    height: CHART_HEIGHT,
+    alignSelf: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   chart: {
-    alignSelf: 'center',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   maxLabel: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
     fontFamily: Fonts.family,
     fontWeight: '400',
     fontSize: 12,
@@ -109,6 +130,9 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   minLabel: {
+    position: 'absolute',
+    left: 6,
+    bottom: 58,
     fontFamily: Fonts.family,
     fontWeight: '400',
     fontSize: 12,
@@ -116,6 +140,8 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   xAxisRow: {
+    width: CHART_WIDTH,
+    alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 4,

@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { metricDisplayConfig } from '@/features/members/metricDisplay';
+import {
+  formatTrendLabel,
+  metricDisplayConfig,
+} from '@/features/members/metricDisplay';
 import { BarChartCard } from '@/features/metrics/components/BarChartCard';
 import { DateStepper } from '@/features/metrics/components/DateStepper';
 import { MetricDetailsHeader } from '@/features/metrics/components/MetricDetailsHeader';
@@ -40,7 +43,6 @@ export function MetricDetailsScreen({
   const [range, setRange] = useState<MetricRange>('1D');
   const [dateOffset, setDateOffset] = useState(0);
 
-  // memberId isn't yet wired to a real data source — see CLAUDE.md "Not Set Up Yet".
   void memberId;
 
   const config = metricDisplayConfig[metricType];
@@ -62,27 +64,38 @@ export function MetricDetailsScreen({
           styles.content,
           { paddingBottom: insets.bottom + 24 },
         ]}
-        showsVerticalScrollIndicator={false}>
-        <RangeTabBar activeRange={range} onChangeRange={setRange} />
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.rangeWrap}>
+          <RangeTabBar activeRange={range} onChangeRange={setRange} />
+        </View>
 
-        <DateStepper
-          label={dateLabel}
-          onPressPrevious={() => setDateOffset((value) => value + 1)}
-          onPressNext={() => setDateOffset((value) => Math.max(0, value - 1))}
-          canGoNext={dateOffset > 0}
-        />
+        <View style={styles.dateWrap}>
+          <DateStepper
+            label={dateLabel}
+            onPressPrevious={() => setDateOffset((value) => value + 1)}
+            onPressNext={() => setDateOffset((value) => Math.max(0, value - 1))}
+            canGoNext={dateOffset > 0}
+          />
+        </View>
 
-        <BarChartCard
-          values={summary.chartValues}
-          maxLabel={`${summary.chartAxisMax ?? summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
-          minLabel={`${summary.chartAxisMin ?? summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
-          xAxisLabels={xAxisLabelsByRange[range]}
-        />
+        <View style={styles.chartWrap}>
+          <BarChartCard
+            values={summary.chartValues}
+            maxLabel={`${summary.chartAxisMax ?? summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
+            minLabel={`${summary.chartAxisMin ?? summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
+            xAxisLabels={xAxisLabelsByRange[range]}
+          />
+        </View>
 
         <MetricSummaryCard
           title={`Average ${config.label}`}
           value={config.formatValue(summary.average.value)}
           unitSuffix={config.unitSuffix}
+          trendText={
+            formatTrendLabel(summary.average.trendLabel) ??
+            (metricType === 'heart_rate' ? 'Higher than usual' : undefined)
+          }
           highestLabel={`${summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
           lowestLabel={`${summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
           insightText={insight?.generatedText}
@@ -100,6 +113,14 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 20,
-    gap: 16,
+  },
+  rangeWrap: {
+    marginBottom: 20,
+  },
+  dateWrap: {
+    marginBottom: 16,
+  },
+  chartWrap: {
+    marginBottom: 20,
   },
 });

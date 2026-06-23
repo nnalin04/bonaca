@@ -20,6 +20,7 @@ export const Colors = {
   tabBarBorder: '#edeeff',
   chartLine: '#e07a5f',
   chartAreaFill: 'rgba(224, 122, 95, 0.1)',
+  chartGrid: '#c5c5c5',
   chartLineSecondary: '#3a7f7c',
   chartAreaFillSecondary: 'rgba(58, 127, 124, 0.1)',
   insightCardBackground: 'rgba(213, 213, 81, 0.1)',
@@ -48,6 +49,7 @@ export const Colors = {
   // Member Details metric card icon background (Figma node 196:4233)
   metricIconBackground: '#f5f5f5',
   sleepBarTrack: '#f0f0f7',
+  summaryDivider: '#f1ecec',
 } as const;
 
 export const Radii = {

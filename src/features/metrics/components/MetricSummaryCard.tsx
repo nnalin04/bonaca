@@ -7,6 +7,7 @@ interface MetricSummaryCardProps {
   title: string;
   value: string;
   unitSuffix?: string;
+  trendText?: string;
   highestLabel: string;
   lowestLabel: string;
   insightText?: string;
@@ -16,6 +17,7 @@ export function MetricSummaryCard({
   title,
   value,
   unitSuffix,
+  trendText,
   highestLabel,
   lowestLabel,
   insightText,
@@ -28,6 +30,8 @@ export function MetricSummaryCard({
         <Text style={styles.value}>{value}</Text>
         {unitSuffix ? <Text style={styles.unit}>{unitSuffix}</Text> : null}
       </View>
+
+      {trendText ? <Text style={styles.trend}>{trendText}</Text> : null}
 
       <View style={styles.divider} />
 
@@ -57,8 +61,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     backgroundColor: Colors.white,
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   title: {
     fontFamily: Fonts.family,
@@ -71,6 +76,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
+    marginTop: 4,
   },
   value: {
     fontFamily: Fonts.family,
@@ -88,11 +94,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.summaryDivider,
+    marginTop: 12,
   },
   minMaxRow: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 48,
+    marginTop: 12,
   },
   minMaxText: {
     fontFamily: Fonts.family,
@@ -111,6 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.insightCardBackground,
     borderRadius: 12,
     padding: 12,
+    marginTop: 16,
   },
   insightText: {
     flex: 1,
@@ -118,6 +127,13 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 14,
     lineHeight: 20,
+    color: Colors.textSecondary,
+  },
+  trend: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 12,
+    lineHeight: 16,
     color: Colors.textSecondary,
   },
 });

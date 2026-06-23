@@ -16,16 +16,18 @@ export function MetricDetailsHeader({
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
-      style={styles.header}>
+      locations={[0, 0.9504]}
+      start={{ x: 0.9705, y: -0.432 }}
+      end={{ x: 0.2064, y: 1.2136 }}
+      style={styles.header}
+    >
       <Pressable
         style={styles.backButton}
         onPress={onPressBack}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel="Go back">
+        accessibilityLabel="Go back"
+      >
         <IconChevronLeft size={24} color={Colors.white} strokeWidth={1.75} />
       </Pressable>
       <Text style={styles.title}>{title}</Text>
