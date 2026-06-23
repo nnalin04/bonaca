@@ -1,7 +1,6 @@
 import { IconChevronLeft } from '@tabler/icons-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
@@ -11,15 +10,13 @@ interface SubscriptionHeaderProps {
 }
 
 export function SubscriptionHeader({ title, onPressBack }: SubscriptionHeaderProps) {
-  const insets = useSafeAreaInsets();
-
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
-      style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      locations={[0, 0.9504]}
+      start={{ x: 0.9705, y: -0.432 }}
+      end={{ x: 0.2064, y: 1.2136 }}
+      style={styles.header}>
       {onPressBack ? (
         <Pressable
           style={styles.backButton}
@@ -44,8 +41,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: Radii.headerCorner,
     borderBottomRightRadius: Radii.headerCorner,
     paddingHorizontal: 16,
+    paddingBottom: 16,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
   backButton: {

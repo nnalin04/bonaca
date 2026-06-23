@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   list: {
-    marginTop: 24,
+    marginTop: 20,
     gap: 12,
   },
   footer: {
@@ -126,8 +126,9 @@ const styles = StyleSheet.create({
   },
   connectLater: {
     fontFamily: Fonts.family,
-    fontWeight: '500',
+    fontWeight: '600',
     fontSize: 16,
+    lineHeight: 22,
     color: Colors.accent,
     textDecorationLine: 'underline',
   },
