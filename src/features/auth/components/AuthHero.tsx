@@ -7,16 +7,18 @@ import { Colors, Fonts } from '@/theme/tokens';
 interface AuthHeroProps {
   tagline: string;
   height: number;
+  contentTop?: number;
+  contentGap?: number;
 }
 
-export function AuthHero({ tagline, height }: AuthHeroProps) {
+export function AuthHero({ tagline, height, contentTop, contentGap = 24 }: AuthHeroProps) {
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
       locations={[0, 0.95]}
       start={{ x: 0.97, y: -0.43 }}
       end={{ x: 0.21, y: 1.21 }}
-      style={[styles.hero, { height }]}>
+      style={[styles.hero, { height, paddingTop: contentTop, gap: contentGap }]}>
       <Image
         source={require('../../../../assets/images/brand/bonaca-mark.png')}
         style={styles.mark}
@@ -30,9 +32,8 @@ export function AuthHero({ tagline, height }: AuthHeroProps) {
 const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 18,
-    gap: 24,
   },
   mark: {
     width: 80,

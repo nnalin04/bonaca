@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthHero } from '@/features/auth/components/AuthHero';
 import { MobileNumberField } from '@/features/auth/components/MobileNumberField';
@@ -11,7 +11,6 @@ import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 export function LoginScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [mobileNumber, setMobileNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -36,9 +35,12 @@ export function LoginScreen() {
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <StatusBar style="light" />
       <AuthHero
         tagline={'Stay gently connected to your\nfamily’s daily wellbeing'}
         height={464}
+        contentTop={232}
+        contentGap={32}
       />
 
       <View style={styles.card}>
@@ -50,7 +52,7 @@ export function LoginScreen() {
         <MobileNumberField countryCode="+91" value={mobileNumber} onChangeText={setMobileNumber} />
         {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
-        <View style={[styles.ctaBlock, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={styles.ctaBlock}>
           {isSubmitting ? (
             <ActivityIndicator />
           ) : (
@@ -75,14 +77,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: Radii.cardTop,
     borderTopRightRadius: Radii.cardTop,
-    marginTop: -48,
     paddingHorizontal: 16,
     paddingTop: 24,
-    gap: 24,
+    gap: 32,
   },
   titleBlock: {
+    width: 262,
+    alignSelf: 'center',
     alignItems: 'center',
-    gap: 4,
+    gap: 12,
   },
   title: {
     fontFamily: Fonts.family,
@@ -107,7 +110,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   ctaBlock: {
-    marginTop: 'auto',
+    width: '100%',
+    marginTop: 26,
     gap: 24,
     alignItems: 'center',
   },

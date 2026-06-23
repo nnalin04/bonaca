@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +22,11 @@ function formatCountdown(seconds: number) {
   return `${mm}:${ss}`;
 }
 
+function formatOtpPhoneNumber(phoneNumber?: string) {
+  if (!phoneNumber) return '';
+  return phoneNumber.startsWith('+91') ? phoneNumber.slice(3) : phoneNumber;
+}
+
 export function OtpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -30,6 +36,7 @@ export function OtpScreen() {
   const [secondsLeft, setSecondsLeft] = useState(RESEND_COUNTDOWN_SECONDS);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const displayPhoneNumber = formatOtpPhoneNumber(phoneNumber);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -55,7 +62,7 @@ export function OtpScreen() {
       const { profileCompleted } = await login(phoneNumber, code);
       router.push(profileCompleted ? '/(tabs)/home' : '/(auth)/complete-profile');
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Could not verify OTP. Please try again.');
+      setErrorMessage('Enter a valid OTP');
       setDigits(['', '', '', '']);
     } finally {
       setIsVerifying(false);
@@ -75,13 +82,14 @@ export function OtpScreen() {
 
   return (
     <View style={styles.screen}>
+      <StatusBar style="light" />
       <LinearGradient
         colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-        locations={[0.03, 0.81]}
-        start={{ x: 0.95, y: 0.29 }}
-        end={{ x: 0.05, y: 0.71 }}
+        locations={[0, 0.95]}
+        start={{ x: 0.97, y: -0.43 }}
+        end={{ x: 0.21, y: 1.21 }}
         style={styles.hero}>
-        <View style={[styles.backRow, { top: insets.top + 8 }]}>
+        <View style={[styles.backRow, { top: insets.top + 16 }]}>
           <BackButton onPress={() => router.back()} />
         </View>
       </LinearGradient>
@@ -90,7 +98,7 @@ export function OtpScreen() {
         <View style={styles.titleBlock}>
           <Text style={styles.title}>Verify OTP</Text>
           <Text style={styles.subtitle}>
-            OTP sent to <Text style={styles.subtitleStrong}>{phoneNumber}</Text>
+            OTP sent to <Text style={styles.subtitleStrong}>{displayPhoneNumber}</Text>
           </Text>
         </View>
 
@@ -99,13 +107,15 @@ export function OtpScreen() {
         {isVerifying && <ActivityIndicator />}
         {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
-        {secondsLeft > 0 ? (
-          <Text style={styles.statusText}>Resend OTP in {formatCountdown(secondsLeft)}</Text>
-        ) : (
-          <Pressable onPress={handleResend} accessibilityRole="button" accessibilityLabel="Resend OTP">
-            <Text style={styles.resendLink}>Resend OTP</Text>
-          </Pressable>
-        )}
+        <View style={errorMessage ? styles.statusAfterError : styles.statusBlock}>
+          {secondsLeft > 0 ? (
+            <Text style={styles.statusText}>Resend OTP in {formatCountdown(secondsLeft)}</Text>
+          ) : (
+            <Pressable onPress={handleResend} accessibilityRole="button" accessibilityLabel="Resend OTP">
+              <Text style={styles.resendLink}>Resend OTP</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -128,14 +138,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: Radii.cardTop,
     borderTopRightRadius: Radii.cardTop,
-    marginTop: -48,
     paddingHorizontal: 16,
     paddingTop: 24,
-    gap: 24,
   },
   titleBlock: {
+    width: 262,
+    alignSelf: 'center',
     alignItems: 'center',
-    gap: 4,
+    gap: 12,
+    marginBottom: 32,
   },
   title: {
     fontFamily: Fonts.family,
@@ -164,13 +175,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorText: {
+    width: 262,
+    alignSelf: 'center',
     fontFamily: Fonts.family,
     fontWeight: '500',
     fontSize: 16,
     lineHeight: 22,
     color: Colors.error,
     textAlign: 'center',
-    marginTop: -12,
+    marginTop: 16,
+  },
+  statusBlock: {
+    width: 262,
+    alignSelf: 'center',
+    marginTop: 24,
+  },
+  statusAfterError: {
+    width: 262,
+    alignSelf: 'center',
+    marginTop: 20,
   },
   resendLink: {
     fontFamily: Fonts.family,
