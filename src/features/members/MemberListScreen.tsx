@@ -8,13 +8,6 @@ import { MemberSyncCard } from '@/features/home/components/MemberSyncCard';
 import { useMembers } from '@/features/members/useMembers';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
-/**
- * "Manage Members" (Figma node 197:9935) — distinct from Home's "Shared with you" list:
- * shows every member in the account (not filtered by pinned/hidden) plus an Add Member CTA.
- * Per-member "X metrics" / "Last synced" captions in the Figma reference are skipped here —
- * real wearable sync isn't built yet (TRD M1/M2), so "No wearable connected" is the honest
- * state for every member today, same caption the Figma design itself uses for that state.
- */
 export function MemberListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -105,7 +98,6 @@ const styles = StyleSheet.create({
   addButton: {
     height: 56,
     borderRadius: Radii.row,
-    // Figma node 197:9935: filled lavender tint, not a white/bordered button.
     backgroundColor: Colors.tabBarTrack,
     flexDirection: 'row',
     alignItems: 'center',

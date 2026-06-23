@@ -1,4 +1,3 @@
-/** Formats a notification's createdAt ISO timestamp into the relative/absolute style the Figma design uses (e.g. "1 hr ago", "Yesterday, 3:30 PM", "1 week ago"). */
 export function formatDisplayTime(createdAtIso: string, now: Date = new Date()): string {
   const createdAt = new Date(createdAtIso);
   const diffMs = now.getTime() - createdAt.getTime();

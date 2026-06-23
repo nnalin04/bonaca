@@ -28,19 +28,6 @@ const SCOPE_ICONS: Record<SharingScope, typeof IconActivity> = {
   behaviour: IconTimeline,
 };
 
-/**
- * Adapted from Figma's "Edit Permissions" (node 197:5497), which mocks up per-metric
- * checkboxes (e.g. Heart Rate, HRV individually) within each category. The actual
- * SharingGrant data model only persists at the scope level (vitals/activity/behaviour
- * per docs/PRD.pdf §11.2 — no separate location scope), so this screen toggles whole
- * scopes, not individual metrics.
- *
- * Per docs/PRD.pdf §11.3, toggles apply instantly (no Save step) and there's a 4th
- * "All" row — pure UI sugar over the 3 real scopes, not a persisted 4th value.
- *
- * memberId is the grantee (the person whose access is being managed — "Manage access
- * for {name}"), reached from that member's own options menu.
- */
 export function EditPermissionsScreen({ memberId }: EditPermissionsScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
