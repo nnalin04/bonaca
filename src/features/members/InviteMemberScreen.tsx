@@ -1,9 +1,18 @@
 import { IconSearch } from '@tabler/icons-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useInviteMember } from '@/features/members/hooks/useInviteMember';
+import { toInvitePhoneNumber } from '@/features/members/model/invitePhone';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { Colors, Fonts } from '@/theme/tokens';
 
@@ -50,17 +59,29 @@ const contacts: ContactOption[] = [
 export function InviteMemberScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { invitesByPhone, pendingPhone, errorMessage, inviteContact } =
+    useInviteMember();
 
   return (
     <View style={styles.screen}>
-      <ProfileHeader title="Invite a Family Member" onPressBack={() => router.back()} />
+      <ProfileHeader
+        title="Invite a Family Member"
+        onPressBack={() => router.back()}
+      />
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}>
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.subtitle}>
           Invite a family member to approve billing after your free trial
         </Text>
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
 
         <View style={styles.searchBox}>
           <IconSearch size={24} color={Colors.textSecondary} strokeWidth={2} />
@@ -69,32 +90,87 @@ export function InviteMemberScreen() {
 
         <View style={styles.contactList}>
           {contacts.map((contact, index) => (
-            <View key={`${contact.name}-${contact.phone}-${index}`} style={styles.contactRow}>
-              {contact.image ? (
-                <Image source={contact.image} style={styles.avatarImage} contentFit="cover" />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarInitial}>{contact.initial}</Text>
-                </View>
-              )}
-
-              <View style={styles.contactText}>
-                <Text style={styles.contactName}>{contact.name}</Text>
-                <Text style={styles.contactPhone}>{contact.phone}</Text>
-              </View>
-
-              <Pressable
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={`Invite ${contact.name}`}>
-                <Text style={styles.inviteLabel}>Invite</Text>
-              </Pressable>
-            </View>
+            <ContactRow
+              key={`${contact.name}-${contact.phone}-${index}`}
+              contact={contact}
+              inviteStatus={
+                invitesByPhone.get(toInvitePhoneNumber(contact.phone))?.status
+              }
+              isPending={pendingPhone === toInvitePhoneNumber(contact.phone)}
+              onInvite={() => void inviteContact(contact.phone)}
+            />
           ))}
         </View>
       </ScrollView>
     </View>
   );
+}
+
+interface ContactRowProps {
+  contact: ContactOption;
+  inviteStatus?: 'pending' | 'accepted' | 'expired';
+  isPending: boolean;
+  onInvite: () => void;
+}
+
+function ContactRow({
+  contact,
+  inviteStatus,
+  isPending,
+  onInvite,
+}: ContactRowProps) {
+  const isDisabled =
+    isPending || inviteStatus === 'pending' || inviteStatus === 'accepted';
+  const inviteLabel = getInviteLabel(inviteStatus);
+
+  return (
+    <View style={styles.contactRow}>
+      {contact.image ? (
+        <Image
+          source={contact.image}
+          style={styles.avatarImage}
+          contentFit="cover"
+        />
+      ) : (
+        <View style={styles.avatarFallback}>
+          <Text style={styles.avatarInitial}>{contact.initial}</Text>
+        </View>
+      )}
+
+      <View style={styles.contactText}>
+        <Text style={styles.contactName}>{contact.name}</Text>
+        <Text style={styles.contactPhone}>{contact.phone}</Text>
+      </View>
+
+      <Pressable
+        hitSlop={8}
+        disabled={isDisabled}
+        onPress={onInvite}
+        accessibilityRole="button"
+        accessibilityLabel={`${inviteLabel} ${contact.name}`}
+      >
+        {isPending ? (
+          <ActivityIndicator size="small" />
+        ) : (
+          <Text
+            style={[
+              styles.inviteLabel,
+              isDisabled && styles.inviteLabelDisabled,
+            ]}
+          >
+            {inviteLabel}
+          </Text>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+function getInviteLabel(status?: 'pending' | 'accepted' | 'expired'): string {
+  if (status === 'pending') return 'Invited';
+  if (status === 'accepted') return 'Joined';
+  if (status === 'expired') return 'Invite again';
+  return 'Invite';
 }
 
 const styles = StyleSheet.create({
@@ -112,6 +188,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: Colors.textSecondary,
+  },
+  errorText: {
+    marginTop: 12,
+    fontFamily: Fonts.family,
+    fontWeight: '500',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.error,
   },
   searchBox: {
     height: 48,
@@ -196,5 +280,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: Colors.accent,
+  },
+  inviteLabelDisabled: {
+    color: Colors.textSecondary,
   },
 });

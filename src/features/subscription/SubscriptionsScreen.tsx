@@ -1,11 +1,22 @@
 import { IconChevronRight, IconUsers, IconX } from '@tabler/icons-react-native';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
+import { useCurrentSubscription } from '@/features/subscription/hooks/useCurrentSubscription';
+import {
+  getSubscriptionDisplayState,
+  type SubscriptionDisplayState,
+} from '@/features/subscription/model/subscriptionDisplay';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface SubscriptionRow {
@@ -13,89 +24,93 @@ interface SubscriptionRow {
   name: string;
   status: string;
   statusTone?: 'error';
-  image?: number;
-  initial?: string;
-  drawer?: {
-    chip: string;
-    title: string;
-    body: string;
-  };
+  drawer?: SubscriptionDisplayState['drawer'];
 }
-
-const subscriptions: SubscriptionRow[] = [
-  {
-    id: 'dad',
-    name: 'Dad',
-    status: 'Renews on 28 Jan',
-    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
-  },
-  {
-    id: 'mom',
-    name: 'Mom',
-    status: 'Subscription expires in 3 days',
-    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
-    drawer: {
-      chip: 'Expires in 3 days',
-      title: 'Mom',
-      body: 'Renew to continue uninterrupted health insights',
-    },
-  },
-  {
-    id: 'brother',
-    name: 'Brother',
-    status: 'Subscription expired 2 months ago',
-    statusTone: 'error',
-    initial: 'B',
-    drawer: {
-      chip: 'Subscription Expired',
-      title: 'Brother',
-      body: 'Subscription has ended, health tracking is paused',
-    },
-  },
-];
 
 export function SubscriptionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { accountId, displayName, subscription, isLoading, errorMessage } =
+    useCurrentSubscription();
+  const displayState = getSubscriptionDisplayState(subscription);
+  const subscriptions: SubscriptionRow[] = accountId
+    ? [
+        {
+          id: accountId,
+          name: displayName,
+          status: errorMessage ?? displayState.status,
+          statusTone: errorMessage ? 'error' : displayState.statusTone,
+          drawer: errorMessage ? undefined : displayState.drawer,
+        },
+      ]
+    : [];
   const [selected, setSelected] = useState<SubscriptionRow | null>(null);
 
   return (
     <View style={styles.screen}>
       <ProfileHeader title="Subscriptions" onPressBack={() => router.back()} />
 
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.list}>
-          {subscriptions.map((subscription) => (
-            <Pressable
-              key={subscription.id}
-              style={styles.row}
-              onPress={() => setSelected(subscription.drawer ? subscription : null)}
-              accessibilityRole="button"
-              accessibilityLabel={subscription.name}>
-              {subscription.image ? (
-                <Image source={subscription.image} style={styles.avatar} contentFit="cover" />
-              ) : (
-                <PlaceholderAvatar size={36} />
-              )}
-
-              <View style={styles.textBlock}>
-                <Text style={styles.name}>{subscription.name}</Text>
-                <Text
-                  style={[
-                    styles.status,
-                    subscription.statusTone === 'error' && styles.statusError,
-                  ]}>
-                  {subscription.status}
-                </Text>
-              </View>
-
-              <IconChevronRight size={24} color={Colors.textPrimary} strokeWidth={2} />
-            </Pressable>
-          ))}
+      {isLoading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator />
+          <Text style={styles.loadingText}>Loading subscription…</Text>
         </View>
-      </ScrollView>
+      ) : subscriptions.length === 0 ? (
+        <View style={[styles.emptyCard, { marginBottom: insets.bottom + 45 }]}>
+          <IconUsers
+            size={80}
+            color={Colors.emptyStateIcon}
+            strokeWidth={1.75}
+          />
+          <Text style={styles.emptyTitle}>No Subscriptions Yet</Text>
+          <Text style={styles.emptyText}>
+            Complete your profile to start your family subscription
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: insets.bottom + 24 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.list}>
+            {subscriptions.map((subscriptionRow) => (
+              <Pressable
+                key={subscriptionRow.id}
+                style={styles.row}
+                onPress={() =>
+                  setSelected(subscriptionRow.drawer ? subscriptionRow : null)
+                }
+                accessibilityRole="button"
+                accessibilityLabel={subscriptionRow.name}
+              >
+                <PlaceholderAvatar size={36} />
+
+                <View style={styles.textBlock}>
+                  <Text style={styles.name}>{subscriptionRow.name}</Text>
+                  <Text
+                    style={[
+                      styles.status,
+                      subscriptionRow.statusTone === 'error' &&
+                        styles.statusError,
+                    ]}
+                  >
+                    {subscriptionRow.status}
+                  </Text>
+                </View>
+
+                <IconChevronRight
+                  size={24}
+                  color={Colors.textPrimary}
+                  strokeWidth={2}
+                />
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
       {selected ? (
         <View style={styles.overlay}>
@@ -103,17 +118,14 @@ export function SubscriptionsScreen() {
             style={styles.closeButton}
             onPress={() => setSelected(null)}
             accessibilityRole="button"
-            accessibilityLabel="Close subscription renewal">
+            accessibilityLabel="Close subscription renewal"
+          >
             <IconX size={24} color={Colors.white} strokeWidth={2} />
           </Pressable>
 
           <View style={[styles.drawer, { paddingBottom: insets.bottom + 20 }]}>
             <View style={styles.drawerAvatarWrap}>
-              {selected.image ? (
-                <Image source={selected.image} style={styles.drawerAvatar} contentFit="cover" />
-              ) : (
-                <PlaceholderAvatar size={80} />
-              )}
+              <PlaceholderAvatar size={80} />
               <View style={styles.chip}>
                 <Text style={styles.chipText}>{selected.drawer?.chip}</Text>
               </View>
@@ -124,9 +136,15 @@ export function SubscriptionsScreen() {
 
             <Pressable
               style={styles.renewButton}
-              onPress={() => router.push('/subscription/payment-gateway')}
+              onPress={() =>
+                router.push({
+                  pathname: '/subscription/payment-gateway',
+                  params: { accountId: selected.id },
+                })
+              }
               accessibilityRole="button"
-              accessibilityLabel="Renew at ₹249">
+              accessibilityLabel="Renew at ₹249"
+            >
               <Text style={styles.renewText}>Renew at ₹249</Text>
             </Pressable>
           </View>
@@ -142,7 +160,12 @@ function PlaceholderAvatar({ size }: { size: number }) {
   const bodyHeight = size * 0.44;
 
   return (
-    <View style={[styles.placeholderAvatar, { width: size, height: size, borderRadius: size / 2 }]}>
+    <View
+      style={[
+        styles.placeholderAvatar,
+        { width: size, height: size, borderRadius: size / 2 },
+      ]}
+    >
       <View
         style={[
           styles.placeholderHead,
@@ -211,12 +234,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
   },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.avatarBorder,
+  loadingState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textSecondary,
   },
   placeholderAvatar: {
     borderWidth: 1,
@@ -285,13 +314,6 @@ const styles = StyleSheet.create({
   },
   drawerAvatarWrap: {
     alignItems: 'center',
-  },
-  drawerAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 1,
-    borderColor: Colors.avatarBorder,
   },
   chip: {
     minHeight: 24,
