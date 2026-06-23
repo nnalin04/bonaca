@@ -13,20 +13,32 @@ interface UseNotificationsResult {
 }
 
 /** memberId is the requesting user's own Member id — notifications are personal, not account-shared (see backend plan doc §7). */
-export function useNotifications(memberId: string | undefined): UseNotificationsResult {
+export function useNotifications(
+  memberId: string | undefined,
+): UseNotificationsResult {
   const { accessToken } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+  const [notifications, setNotifications] = useState<NotificationResponse[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!accessToken || !memberId) return;
+    if (!accessToken || !memberId) {
+      setNotifications([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setErrorMessage(null);
     try {
       setNotifications(await getNotifications(accessToken, memberId));
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Could not load your notifications.');
+      setErrorMessage(
+        error instanceof ApiError
+          ? error.message
+          : 'Could not load your notifications.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -34,14 +46,28 @@ export function useNotifications(memberId: string | undefined): UseNotifications
 
   useEffect(() => {
     let cancelled = false;
-    if (!accessToken || !memberId) return;
+    if (!accessToken || !memberId) {
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          setNotifications([]);
+          setIsLoading(false);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     getNotifications(accessToken, memberId)
       .then((result) => {
         if (!cancelled) setNotifications(result);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          setErrorMessage(error instanceof ApiError ? error.message : 'Could not load your notifications.');
+          setErrorMessage(
+            error instanceof ApiError
+              ? error.message
+              : 'Could not load your notifications.',
+          );
         }
       })
       .finally(() => {
@@ -56,9 +82,11 @@ export function useNotifications(memberId: string | undefined): UseNotifications
     async (notificationId: string) => {
       if (!accessToken) return;
       const updated = await markNotificationRead(accessToken, notificationId);
-      setNotifications((current) => current.map((n) => (n.id === updated.id ? updated : n)));
+      setNotifications((current) =>
+        current.map((n) => (n.id === updated.id ? updated : n)),
+      );
     },
-    [accessToken]
+    [accessToken],
   );
 
   return { notifications, isLoading, errorMessage, markRead, refresh };

@@ -1,26 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth/AuthContext';
+import { toMember } from '@/features/members/model/memberMapper';
 import { ApiError, getMembers } from '@/lib/api';
 import type { Member } from '@/types';
 import type { MemberResponse } from '@/types/members';
-
-function toMember(response: MemberResponse): Member {
-  return {
-    id: response.id,
-    accountId: response.accountId,
-    role: response.role,
-    name: response.name,
-    nickname: response.nickname ?? undefined,
-    pinned: response.pinned,
-    hidden: response.hidden,
-    statusMessage: response.statusMessage ?? undefined,
-    gender: response.gender ?? undefined,
-    dob: response.dob ?? undefined,
-    heightCm: response.heightCm ?? undefined,
-    weightKg: response.weightKg ?? undefined,
-  };
-}
 
 interface UseMembersResult {
   /** The requesting user's own Member row, or undefined while loading/on error. */
@@ -39,13 +23,21 @@ export function useMembers(): UseMembersResult {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setResponses([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setErrorMessage(null);
     try {
       setResponses(await getMembers(accessToken));
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Could not load your family members.');
+      setErrorMessage(
+        error instanceof ApiError
+          ? error.message
+          : 'Could not load your family members.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -53,14 +45,28 @@ export function useMembers(): UseMembersResult {
 
   useEffect(() => {
     let cancelled = false;
-    if (!accessToken) return;
+    if (!accessToken) {
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          setResponses([]);
+          setIsLoading(false);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     getMembers(accessToken)
       .then((result) => {
         if (!cancelled) setResponses(result);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          setErrorMessage(error instanceof ApiError ? error.message : 'Could not load your family members.');
+          setErrorMessage(
+            error instanceof ApiError
+              ? error.message
+              : 'Could not load your family members.',
+          );
         }
       })
       .finally(() => {
