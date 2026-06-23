@@ -1,51 +1,55 @@
+import { IconSearch } from '@tabler/icons-react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/features/auth/AuthContext';
-import { MobileNumberField } from '@/features/auth/components/MobileNumberField';
-import { PrimaryButton } from '@/features/auth/components/PrimaryButton';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
-import { ApiError, createInvite } from '@/lib/api';
 import { Colors, Fonts } from '@/theme/tokens';
 
-/**
- * Adapted from Figma's "Invite a Family Member" (node 222:1723), which designs a
- * device-contacts picker with a per-contact "Invite" button. Built as manual phone
- * entry instead — expo-contacts isn't installed and CLAUDE.md says not to add new
- * SDKs without an explicit task; this keeps the same header/title and end result
- * (an invite sent to a phone number) without the contacts permission dependency.
- *
- * No role picker — per docs/PRD.pdf §2.1/§9 Flow C, Secondary Member is the only
- * role a Primary can invite (up to 2 per account, enforced server-side).
- */
+interface ContactOption {
+  name: string;
+  phone: string;
+  initial: string;
+  image?: number;
+}
+
+const contacts: ContactOption[] = [
+  {
+    name: 'Abhishek Kumar',
+    phone: '97426 58812',
+    initial: 'A',
+    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
+  },
+  { name: 'Anurag Patel', phone: '96761 66512', initial: 'A' },
+  {
+    name: 'Arthi',
+    phone: '88812 58812',
+    initial: 'A',
+    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
+  },
+  { name: 'Bhadresh Rao', phone: '74201 56320', initial: 'B' },
+  { name: 'Bhuvan', phone: '94819 64577', initial: 'B' },
+  {
+    name: 'Chandrashekar',
+    phone: '80561 67412',
+    initial: 'C',
+    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
+  },
+  { name: 'Damodar', phone: '97420 11981', initial: 'D' },
+  {
+    name: 'Dinesh Rickshaw',
+    phone: '99803 51212',
+    initial: 'D',
+    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
+  },
+  { name: 'Gangadhar', phone: '88812 58812', initial: 'G' },
+  { name: 'Arthi', phone: '88812 58812', initial: 'A' },
+];
+
 export function InviteMemberScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { accessToken } = useAuth();
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const canSubmit = mobileNumber.length === 10 && !isSubmitting;
-
-  const handleSubmit = async () => {
-    if (!accessToken) return;
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-    try {
-      await createInvite(accessToken, { phoneNumber: `+91${mobileNumber}` });
-      setSuccessMessage('Invite sent successfully');
-      setMobileNumber('');
-    } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Could not send the invite. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <View style={styles.screen}>
@@ -55,20 +59,39 @@ export function InviteMemberScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>
-          Invite a family member to view your shared health and routine updates. You can share with up to 2 family
-          members.
+          Invite a family member to approve billing after your free trial
         </Text>
 
-        <MobileNumberField countryCode="+91" value={mobileNumber} onChangeText={setMobileNumber} />
+        <View style={styles.searchBox}>
+          <IconSearch size={24} color={Colors.textSecondary} strokeWidth={2} />
+          <Text style={styles.searchPlaceholder}>Search contact</Text>
+        </View>
 
-        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-        {successMessage && <Text style={styles.successText}>{successMessage}</Text>}
+        <View style={styles.contactList}>
+          {contacts.map((contact, index) => (
+            <View key={`${contact.name}-${contact.phone}-${index}`} style={styles.contactRow}>
+              {contact.image ? (
+                <Image source={contact.image} style={styles.avatarImage} contentFit="cover" />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarInitial}>{contact.initial}</Text>
+                </View>
+              )}
 
-        {isSubmitting ? (
-          <ActivityIndicator />
-        ) : (
-          <PrimaryButton label="Send Invite" disabled={!canSubmit} onPress={() => void handleSubmit()} />
-        )}
+              <View style={styles.contactText}>
+                <Text style={styles.contactName}>{contact.name}</Text>
+                <Text style={styles.contactPhone}>{contact.phone}</Text>
+              </View>
+
+              <Pressable
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Invite ${contact.name}`}>
+                <Text style={styles.inviteLabel}>Invite</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -81,28 +104,97 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 24,
-    gap: 20,
+    paddingTop: 20,
   },
   subtitle: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 22,
     color: Colors.textSecondary,
   },
-  errorText: {
-    fontFamily: Fonts.family,
-    fontSize: 13,
-    lineHeight: 18,
-    color: Colors.error,
-    textAlign: 'center',
+  searchBox: {
+    height: 48,
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.onboardingCardBorder,
+    backgroundColor: Colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
   },
-  successText: {
+  searchPlaceholder: {
     fontFamily: Fonts.family,
-    fontSize: 13,
-    lineHeight: 18,
+    fontWeight: '400',
+    fontSize: 16,
+    lineHeight: 22,
+    color: Colors.searchPlaceholder,
+  },
+  contactList: {
+    marginTop: 12,
+    backgroundColor: Colors.white,
+    paddingTop: 8,
+  },
+  contactRow: {
+    height: 56,
+    marginHorizontal: 8,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.onboardingCardBorder,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.avatarBorder,
+  },
+  avatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.avatarBorder,
+    backgroundColor: Colors.avatarPlaceholderInnerBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontFamily: Fonts.family,
+    fontWeight: '600',
+    fontSize: 18,
+    lineHeight: 28,
+    color: Colors.avatarPlaceholderFg,
+  },
+  contactText: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  contactName: {
+    fontFamily: Fonts.family,
+    fontWeight: '500',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textPrimary,
+  },
+  contactPhone: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 12,
+    lineHeight: 16,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  inviteLabel: {
+    fontFamily: Fonts.family,
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.accent,
-    textAlign: 'center',
   },
 });

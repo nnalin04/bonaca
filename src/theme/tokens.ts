@@ -29,6 +29,7 @@ export const Colors = {
   inputBorderSubtle: '#ebebeb',
   onboardingCardBorder: '#e5e5e5',
   placeholderText: '#72777a',
+  searchPlaceholder: '#8a8686',
   inputChevron: '#8d9093',
   error: '#d63d3d',
   avatarBorder: '#eedada',
