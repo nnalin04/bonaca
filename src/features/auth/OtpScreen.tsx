@@ -61,7 +61,7 @@ export function OtpScreen() {
     try {
       const { profileCompleted } = await login(phoneNumber, code);
       router.push(profileCompleted ? '/(tabs)/home' : '/(auth)/complete-profile');
-    } catch (error) {
+    } catch {
       setErrorMessage('Enter a valid OTP');
       setDigits(['', '', '', '']);
     } finally {
