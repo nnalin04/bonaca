@@ -51,6 +51,9 @@ export const Colors = {
   metricIconBackground: '#f5f5f5',
   sleepBarTrack: '#f0f0f7',
   summaryDivider: '#f1ecec',
+  modalScrim: 'rgba(0, 0, 0, 0.58)',
+  modalClose: '#342c2c',
+  subscriptionChipBackground: '#fdf2f2',
 } as const;
 
 export const Radii = {

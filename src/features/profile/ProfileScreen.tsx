@@ -7,7 +7,7 @@ import {
   IconLogout,
   IconUsers,
 } from '@tabler/icons-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -71,7 +71,7 @@ export function ProfileScreen() {
       key: 'subscription',
       icon: IconCash,
       label: 'Manage Subscription',
-      onPress: () => router.push('/subscription/payment-gateway'),
+      onPress: () => router.push('/subscription' as Href),
     },
     {
       key: 'hidden-members',
