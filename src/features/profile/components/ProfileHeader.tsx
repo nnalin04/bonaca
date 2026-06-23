@@ -13,9 +13,9 @@ export function ProfileHeader({ title, onPressBack }: ProfileHeaderProps) {
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0, 1]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
+      locations={[0, 0.9504]}
+      start={{ x: 0.9705, y: -0.432 }}
+      end={{ x: 0.2064, y: 1.2136 }}
       style={styles.header}>
       <Pressable
         style={styles.iconButton}

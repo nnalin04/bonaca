@@ -42,7 +42,6 @@ const tabTitles: Record<MemberDetailsTab, string> = {
   behaviour: 'Behaviour',
 };
 
-/** X-axis labels for chart-style metric cards, per Figma (196:4233). Only metrics with a confirmed Figma reference get labels. */
 const sparklineAxisLabels: Partial<Record<MetricReading['metricType'], string[]>> = {
   heart_rate: ['6AM', '12PM', '6PM', '12AM'],
   heart_rate_variability: ['1W', '2W', '3W', '4W'],
@@ -74,8 +73,6 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   }, [accessToken, memberId]);
 
   const displayName = member?.nickname ?? member?.name ?? mockMember.nickname ?? mockMember.name;
-  // Metric content below (Vitals/Activity/Behaviour tabs) is still mock data — real wearable
-  // sync (TRD M1/M2) isn't built yet; this phase only wires member identity/permissions.
 
   const menuOptions = [
     member?.pinned ? 'Unpin from top' : 'Pin to top',
@@ -140,6 +137,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         unitSuffix={config.unitSuffix}
         trendText={formatTrendLabel(reading.trendLabel)}
         width="full"
+        pinned={member?.pinned && reading.metricType === 'heart_rate'}
         accessory={
           points ? (
             <MiniSparkline
@@ -264,14 +262,14 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         onPressMenu={() => setMenuVisible(true)}
       />
 
-      <View style={styles.tabBarWrap}>
+      <View style={[styles.tabBarWrap, { bottom: insets.bottom + 20 }]}>
         <MemberTabBar activeTab={activeTab} onChangeTab={setActiveTab} />
       </View>
 
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 24 },
+          { paddingBottom: insets.bottom + 98 },
         ]}
         showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionTitle}>{tabTitles[activeTab]}</Text>
@@ -305,12 +303,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   tabBarWrap: {
-    marginTop: -23,
+    position: 'absolute',
+    left: 26,
+    right: 25,
     alignItems: 'center',
+    zIndex: 10,
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 36,
+    paddingTop: 24,
   },
   sectionTitle: {
     fontFamily: Fonts.family,

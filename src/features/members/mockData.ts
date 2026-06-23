@@ -1,10 +1,5 @@
 import type { Member, MetricReading } from '@/types';
 
-/**
- * Mock data for Member Details (Figma node 196:4233). Standing in for the future
- * Supabase-backed member + latest-readings fetch — shape mirrors the real domain
- * types so swapping in real data later is a drop-in.
- */
 export const mockMember: Member = {
   id: 'member-self',
   accountId: 'account-self',
@@ -216,7 +211,6 @@ export const sleepWeeklyBars = [
   { day: 'S', heightRatio: 0.65 },
 ];
 
-/** Normalized sparkline points (0-1) for chart-style metric cards, shaped to roughly match the Figma reference curves. */
 export const sparklinePoints: Partial<
   Record<MetricReading['metricType'], number[]>
 > = {

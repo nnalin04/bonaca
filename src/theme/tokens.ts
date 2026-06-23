@@ -7,6 +7,7 @@ export const Colors = {
   textSecondary: '#4e535a',
   textOnDark: '#e1e7ef',
   accent: '#575fb4',
+  pinBadge: '#25aeac',
   white: '#ffffff',
   badge: '#f05252',
   iconMuted: '#c5cdd6',
@@ -30,6 +31,7 @@ export const Colors = {
   inputChevron: '#8d9093',
   error: '#d63d3d',
   avatarBorder: '#eedada',
+  memberHeaderAvatarBorder: '#9499d1',
   avatarPlaceholderBg: '#e9e9e9',
   avatarPlaceholderInnerBg: '#f7f7f7',
   avatarPlaceholderFg: '#007367',
@@ -45,6 +47,7 @@ export const Colors = {
   wearableCardIconBorder: '#292d50',
   // Member Details metric card icon background (Figma node 196:4233)
   metricIconBackground: '#f5f5f5',
+  sleepBarTrack: '#f0f0f7',
 } as const;
 
 export const Radii = {

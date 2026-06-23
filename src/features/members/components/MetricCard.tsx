@@ -1,4 +1,4 @@
-import type { Icon } from '@tabler/icons-react-native';
+import { IconPinned, type Icon } from '@tabler/icons-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -11,10 +11,9 @@ interface MetricCardProps {
   value: string;
   unitSuffix?: string;
   trendText?: string | null;
-  /** 'full' spans the row; 'half' is meant to sit two-up via MetricCardRow. */
   width?: 'full' | 'half';
-  /** Optional right-aligned accessory, e.g. a sparkline or mini bar chart. */
   accessory?: ReactNode;
+  pinned?: boolean;
   onPress?: () => void;
 }
 
@@ -27,6 +26,7 @@ export function MetricCard({
   trendText,
   width = 'full',
   accessory,
+  pinned,
   onPress,
 }: MetricCardProps) {
   return (
@@ -35,10 +35,18 @@ export function MetricCard({
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={label}>
-      <View style={styles.iconCircle}>
-        <MetricIcon size={24} color={iconColor} strokeWidth={1.75} />
+      <View style={styles.headerRow}>
+        <View style={styles.iconCircle}>
+          <MetricIcon size={24} color={iconColor} strokeWidth={1.75} />
+        </View>
+        <Text style={styles.label}>{label}</Text>
       </View>
-      <Text style={styles.label}>{label}</Text>
+
+      {pinned ? (
+        <View style={styles.pinBadge}>
+          <IconPinned size={20} color={Colors.white} strokeWidth={1.75} />
+        </View>
+      ) : null}
 
       <View style={styles.bottomRow}>
         <View style={styles.valueBlock}>
@@ -58,17 +66,22 @@ export function MetricCard({
 const styles = StyleSheet.create({
   card: {
     width: '100%',
-    minHeight: 136,
+    height: 136,
     borderRadius: Radii.card,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     backgroundColor: Colors.white,
     padding: 12,
-    gap: 8,
   },
   cardHalf: {
     width: '100%',
     flex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 36,
   },
   iconCircle: {
     width: 36,
@@ -86,7 +99,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   bottomRow: {
-    flex: 1,
+    marginTop: 16,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
@@ -103,15 +116,15 @@ const styles = StyleSheet.create({
   value: {
     fontFamily: Fonts.family,
     fontWeight: '600',
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 28,
+    lineHeight: 40,
     color: Colors.textPrimary,
   },
   unit: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     color: Colors.textPrimary,
   },
   trend: {
@@ -124,5 +137,16 @@ const styles = StyleSheet.create({
   accessory: {
     alignItems: 'flex-end',
     justifyContent: 'flex-end',
+  },
+  pinBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.pinBadge,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

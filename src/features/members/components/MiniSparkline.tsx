@@ -75,7 +75,8 @@ const styles = StyleSheet.create({
   axisLabel: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 10,
-    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    color: Colors.textPrimary,
   },
 });

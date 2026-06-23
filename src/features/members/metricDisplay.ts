@@ -25,11 +25,8 @@ import type { MetricTrendLabel, MetricType } from '@/types';
 export interface MetricDisplayConfig {
   label: string;
   icon: Icon;
-  /** Per-metric icon tint, matching the Figma design's distinct color per card (e.g. Heart Rate coral, HRV teal). */
   iconColor: string;
-  /** Formats a raw MetricReading.value into the string shown as the headline figure (e.g. "7h 10m", "120"). */
   formatValue: (value: number) => string;
-  /** Unit suffix shown next to the headline figure (e.g. "bpm"). Empty string when the formatted value is self-contained (e.g. "Moderate", "7h 10m"). */
   unitSuffix: string;
 }
 

@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 8,
+    gap: 16,
   },
   barColumn: {
     alignItems: 'center',
@@ -41,6 +41,8 @@ const styles = StyleSheet.create({
   barTrack: {
     width: 8,
     height: BAR_HEIGHT_MAX,
+    borderRadius: 5,
+    backgroundColor: Colors.sleepBarTrack,
     justifyContent: 'flex-end',
   },
   barFill: {
@@ -51,8 +53,8 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
-    color: Colors.textSecondary,
+    color: Colors.textPrimary,
   },
 });

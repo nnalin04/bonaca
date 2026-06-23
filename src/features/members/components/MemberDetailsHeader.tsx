@@ -23,9 +23,9 @@ export function MemberDetailsHeader({
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
+      locations={[0, 0.9504]}
+      start={{ x: 0.9705, y: -0.432 }}
+      end={{ x: 0.2064, y: 1.2136 }}
       style={styles.header}>
       <Pressable
         style={styles.backButton}
@@ -66,7 +66,8 @@ export function MemberDetailsHeader({
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: 16,
+    height: 175,
+    paddingTop: 63,
     paddingBottom: 16,
     paddingHorizontal: 16,
     borderBottomLeftRadius: Radii.headerCorner,
@@ -80,12 +81,14 @@ const styles = StyleSheet.create({
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   avatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    borderWidth: 1,
+    borderColor: Colors.memberHeaderAvatarBorder,
   },
   textBlock: {
     flex: 1,
@@ -93,7 +96,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontFamily: Fonts.family,
-    fontWeight: '600',
+    fontWeight: '500',
     fontSize: 18,
     lineHeight: 24,
     color: Colors.white,
@@ -108,6 +111,7 @@ const styles = StyleSheet.create({
   menuButton: {
     width: 24,
     height: 24,
+    marginRight: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
