@@ -111,7 +111,7 @@ export function ProfileScreen() {
           avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
           name={self?.nickname ?? self?.name ?? ''}
           phoneNumber={phoneNumber ?? ''}
-          onPress={() => {}}
+          onPress={() => router.push('/profile/details' as Href)}
         />
 
         <View style={styles.wearableSection}>

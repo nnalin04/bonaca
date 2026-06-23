@@ -54,6 +54,8 @@ export const Colors = {
   modalScrim: 'rgba(0, 0, 0, 0.58)',
   modalClose: '#342c2c',
   subscriptionChipBackground: '#fdf2f2',
+  connectedChipBackground: '#ecf6f2',
+  connectedChipText: '#11825c',
 } as const;
 
 export const Radii = {
