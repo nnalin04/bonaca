@@ -46,12 +46,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 11,
+    paddingHorizontal: 12,
   },
   avatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    borderWidth: 1,
+    borderColor: Colors.avatarBorder,
   },
   textBlock: {
     flex: 1,

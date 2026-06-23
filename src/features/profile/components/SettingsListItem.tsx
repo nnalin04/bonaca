@@ -2,7 +2,7 @@ import { IconChevronRight } from '@tabler/icons-react-native';
 import type { ComponentType } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Colors, Fonts } from '@/theme/tokens';
+import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface TablerIconProps {
   size?: number;
@@ -40,6 +40,10 @@ const styles = StyleSheet.create({
   row: {
     height: 56,
     width: '100%',
+    borderWidth: 1,
+    borderColor: Colors.onboardingCardBorder,
+    borderRadius: Radii.row,
+    backgroundColor: Colors.white,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -49,6 +53,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 1,
   },
   label: {
     fontFamily: Fonts.family,

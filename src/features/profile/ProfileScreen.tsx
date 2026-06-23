@@ -17,7 +17,6 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { useMembers } from '@/features/members';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { ProfileSummaryCard } from '@/features/profile/components/ProfileSummaryCard';
-import { SettingsListCard } from '@/features/profile/components/SettingsListCard';
 import { SettingsListItem } from '@/features/profile/components/SettingsListItem';
 import { WearableConnectCard } from '@/features/profile/components/WearableConnectCard';
 import { WearableConnectedCard } from '@/features/profile/components/WearableConnectedCard';
@@ -25,9 +24,6 @@ import { getMe } from '@/lib/api';
 import { Colors } from '@/theme/tokens';
 import type { WearableConnection } from '@/types';
 
-// Wearable connection state isn't backed by any API yet — wearable sync needs the Spike API
-// integration (a paid third-party service, not yet built; see
-// docs/TECHNICAL/BACKEND_STATUS_AND_NEXT_STEPS.md §5.2). Always "not connected" for now.
 const wearableConnection: WearableConnection | null = null;
 
 const providerLabels: Record<WearableConnection['provider'], string> = {
@@ -64,8 +60,6 @@ export function ProfileScreen() {
     };
   }, [accessToken]);
 
-  // Per the real Figma design (197:5921 Secondary vs 39:2025 Primary), these
-  // rows are identical across both roles — no role-based gating on this screen.
   const settingsRows: SettingsRowConfig[] = [
     {
       key: 'members',
@@ -117,30 +111,24 @@ export function ProfileScreen() {
           avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
           name={self?.nickname ?? self?.name ?? ''}
           phoneNumber={phoneNumber ?? ''}
-          onPress={() => {
-            // Profile Details drill-down — not yet built, no-op for now.
-          }}
+          onPress={() => {}}
         />
 
-        {wearableConnection ? (
-          <WearableConnectedCard
-            providerLabel={providerLabels[wearableConnection.provider]}
-            syncLabel={
-              wearableConnection.lastSyncedAt ? 'Last synced: Just now' : 'Not yet synced'
-            }
-            onPressDisconnect={() => {
-              // Disconnect wearable — stub, backend not wired yet.
-            }}
-          />
-        ) : (
-          <WearableConnectCard
-            onPressConnect={() => {
-              // Connect Wearable flow — onboarding screen exists at (auth)/connect-wearable.
-            }}
-          />
-        )}
+        <View style={styles.wearableSection}>
+          {wearableConnection ? (
+            <WearableConnectedCard
+              providerLabel={providerLabels[wearableConnection.provider]}
+              syncLabel={
+                wearableConnection.lastSyncedAt ? 'Last synced: Just now' : 'Not yet synced'
+              }
+              onPressDisconnect={() => {}}
+            />
+          ) : (
+            <WearableConnectCard onPressConnect={() => router.push('/(auth)/connect-wearable')} />
+          )}
+        </View>
 
-        <SettingsListCard>
+        <View style={styles.settingsList}>
           {settingsRows.map((row) => (
             <SettingsListItem
               key={row.key}
@@ -149,7 +137,7 @@ export function ProfileScreen() {
               onPress={row.onPress}
             />
           ))}
-        </SettingsListCard>
+        </View>
       </ScrollView>
     </View>
   );
@@ -163,6 +151,12 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 20,
-    gap: 16,
+  },
+  wearableSection: {
+    marginTop: 24,
+  },
+  settingsList: {
+    marginTop: 24,
+    gap: 12,
   },
 });

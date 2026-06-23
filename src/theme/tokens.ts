@@ -42,6 +42,7 @@ export const Colors = {
   // Profile wearable-connect card additions (Figma node 39:2025)
   wearableCardBackground: '#101010',
   wearableCardIconBackground: '#1c1d2b',
+  wearableCardIconBorder: '#292d50',
   // Member Details metric card icon background (Figma node 196:4233)
   metricIconBackground: '#f5f5f5',
 } as const;
