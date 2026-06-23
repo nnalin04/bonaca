@@ -8,28 +8,58 @@ import {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import type { ComponentType } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useMembers } from '@/features/members';
+import {
+  getAgeLabel,
+  getBmiUnit,
+  getBmiValue,
+  getHeightPrimaryValue,
+  getHeightUnitValue,
+  getProfileDisplayName,
+  getWeightValue,
+} from '@/features/profile/model/profileDetails';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface PhysicalStatCardProps {
-  icon: typeof IconScale;
+  icon: ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
   iconColor: string;
   label: string;
   value: string;
   unit?: string;
 }
 
-const physicalStats: PhysicalStatCardProps[] = [
-  { icon: IconScale, iconColor: '#e07a5f', label: 'Weight', value: '75', unit: 'Kg' },
-  { icon: IconRuler2, iconColor: '#8b6f9c', label: 'Height', value: '5’7”', unit: '(170 cm)' },
-  { icon: IconStretching, iconColor: '#5b8def', label: 'BMI', value: '23.6', unit: '(Normal)' },
-];
-
 export function ProfileDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { self } = useMembers();
+  const displayName = getProfileDisplayName(self);
+  const physicalStats: PhysicalStatCardProps[] = [
+    {
+      icon: IconScale,
+      iconColor: '#e07a5f',
+      label: 'Weight',
+      value: getWeightValue(self?.weightKg),
+      unit: self?.weightKg ? 'Kg' : undefined,
+    },
+    {
+      icon: IconRuler2,
+      iconColor: '#8b6f9c',
+      label: 'Height',
+      value: getHeightPrimaryValue(self?.heightCm),
+      unit: getHeightUnitValue(self?.heightCm),
+    },
+    {
+      icon: IconStretching,
+      iconColor: '#5b8def',
+      label: 'BMI',
+      value: getBmiValue(self),
+      unit: getBmiUnit(self),
+    },
+  ];
 
   return (
     <View style={styles.screen}>
@@ -38,13 +68,15 @@ export function ProfileDetailsScreen() {
         locations={[0, 0.9504]}
         start={{ x: 0.9705, y: -0.432 }}
         end={{ x: 0.2064, y: 1.2136 }}
-        style={styles.header}>
+        style={styles.header}
+      >
         <Pressable
           style={styles.backButton}
           onPress={() => router.back()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Go back">
+          accessibilityLabel="Go back"
+        >
           <IconChevronLeft size={24} color={Colors.white} strokeWidth={1.75} />
         </Pressable>
 
@@ -55,16 +87,20 @@ export function ProfileDetailsScreen() {
             contentFit="cover"
           />
           <View style={styles.identityText}>
-            <Text style={styles.name}>Prasanna Kumar (Dad)</Text>
-            <Text style={styles.meta}>56 yrs</Text>
+            <Text style={styles.name}>{displayName}</Text>
+            <Text style={styles.meta}>{getAgeLabel(self?.dob)}</Text>
           </View>
           <IconPencil size={24} color={Colors.white} strokeWidth={1.75} />
         </View>
       </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}>
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.sectionTitle}>Physical Stats</Text>
 
         <View style={styles.statsGrid}>
@@ -73,19 +109,15 @@ export function ProfileDetailsScreen() {
           ))}
         </View>
 
-        <Text style={[styles.sectionTitle, styles.wearableTitle]}>Connected Wearable</Text>
+        <Text style={[styles.sectionTitle, styles.wearableTitle]}>
+          Connected Wearable
+        </Text>
         <View style={styles.wearableCard}>
-          <Image
-            source={require('../../../assets/images/wearables/fitbit.png')}
-            style={styles.wearableIcon}
-            contentFit="cover"
-          />
           <View style={styles.wearableText}>
-            <Text style={styles.wearableName}>Fitbit - Charge 5</Text>
-            <Text style={styles.wearableSync}>Last synced: 10 mins ago</Text>
-          </View>
-          <View style={styles.connectedChip}>
-            <Text style={styles.connectedText}>Connected</Text>
+            <Text style={styles.wearableName}>No wearable connected</Text>
+            <Text style={styles.wearableSync}>
+              Connect a wearable to start syncing health data
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -247,14 +279,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
   },
-  wearableIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
   wearableText: {
     flex: 1,
-    marginLeft: 10,
   },
   wearableName: {
     fontFamily: Fonts.family,
@@ -270,19 +296,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: Colors.textSecondary,
-  },
-  connectedChip: {
-    height: 24,
-    borderRadius: 3,
-    backgroundColor: Colors.connectedChipBackground,
-    paddingHorizontal: 6,
-    justifyContent: 'center',
-  },
-  connectedText: {
-    fontFamily: Fonts.family,
-    fontWeight: '500',
-    fontSize: 12,
-    lineHeight: 16,
-    color: Colors.connectedChipText,
   },
 });

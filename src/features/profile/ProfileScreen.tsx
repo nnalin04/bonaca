@@ -12,6 +12,7 @@ import type { ComponentType } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/features/auth/AuthContext';
 import { useMembers } from '@/features/members';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { ProfileSummaryCard } from '@/features/profile/components/ProfileSummaryCard';
@@ -43,8 +44,14 @@ interface SettingsRowConfig {
 export function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
   const { self } = useMembers();
   const { phoneNumber } = useProfileSummary();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/(auth)/login');
+  };
 
   const settingsRows: SettingsRowConfig[] = [
     {
@@ -87,7 +94,7 @@ export function ProfileScreen() {
       key: 'logout',
       icon: IconLogout,
       label: 'Log Out',
-      onPress: () => router.replace('/(auth)/login'),
+      onPress: () => void handleLogout(),
     },
   ];
 
