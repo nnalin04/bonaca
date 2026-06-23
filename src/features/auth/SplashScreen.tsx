@@ -16,16 +16,10 @@ export function SplashScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Wait for AuthProvider to finish restoring (or failing to restore) a stored session
-      // before deciding where to go — routing to /login first would flash the login screen
-      // even for an already-authenticated user.
       if (isLoading) return;
       if (!isAuthenticated) {
         router.replace('/(auth)/login');
       } else if (!profileCompleted) {
-        // A session can be restored (valid tokens) without onboarding ever finishing, e.g. the
-        // app was killed between OTP verify and Complete Profile — land back there, not Home,
-        // which would otherwise fail every member fetch with a raw "Complete your profile first".
         router.replace('/(auth)/complete-profile');
       } else {
         router.replace('/(tabs)/home');
@@ -38,9 +32,9 @@ export function SplashScreen() {
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0, 0.95]}
-      start={{ x: 0.97, y: -0.43 }}
-      end={{ x: 0.21, y: 1.21 }}
+      locations={[0, 0.9504]}
+      start={{ x: 0.9705, y: -0.432 }}
+      end={{ x: 0.2064, y: 1.2136 }}
       style={styles.screen}>
       <StatusBar style="light" />
       <View style={styles.content}>
