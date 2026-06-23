@@ -1,6 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -16,11 +22,7 @@ import {
   type MetricRange,
 } from '@/features/metrics/components/RangeTabBar';
 import { useMetricDetail } from '@/features/metrics/hooks/useMetricDetail';
-import {
-  metricDetailSummaries,
-  metricInsights,
-} from '@/features/metrics/mockData';
-import { Colors } from '@/theme/tokens';
+import { Colors, Fonts, Radii } from '@/theme/tokens';
 import type { MetricType } from '@/types';
 import type { MetricRangeQuery } from '@/types/metrics';
 
@@ -51,15 +53,13 @@ export function MetricDetailsScreen({
   const insets = useSafeAreaInsets();
   const [range, setRange] = useState<MetricRange>('1D');
   const [dateOffset, setDateOffset] = useState(0);
-  const { summary: backendSummary, insightText } = useMetricDetail(
+  const { summary, insightText, isLoading, errorMessage } = useMetricDetail(
     memberId,
     metricType,
     backendRangeByUiRange[range],
   );
 
   const config = metricDisplayConfig[metricType];
-  const summary = backendSummary ?? metricDetailSummaries[metricType];
-  const insight = metricInsights[metricType];
 
   const dateLabel =
     dateOffset === 0 ? 'Wednesday, 14 Jan (Today)' : `Tuesday, 13 Jan`;
@@ -91,28 +91,61 @@ export function MetricDetailsScreen({
           />
         </View>
 
-        <View style={styles.chartWrap}>
-          <BarChartCard
-            values={summary.chartValues}
-            maxLabel={`${summary.chartAxisMax ?? summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
-            minLabel={`${summary.chartAxisMin ?? summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
-            xAxisLabels={xAxisLabelsByRange[range]}
+        {isLoading ? (
+          <MetricStateCard message="Loading metric details…" />
+        ) : errorMessage ? (
+          <MetricStateCard
+            title="Could not load metric"
+            message={errorMessage}
           />
-        </View>
+        ) : summary ? (
+          <>
+            <View style={styles.chartWrap}>
+              <BarChartCard
+                values={summary.chartValues}
+                maxLabel={`${summary.chartAxisMax ?? summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
+                minLabel={`${summary.chartAxisMin ?? summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
+                xAxisLabels={xAxisLabelsByRange[range]}
+              />
+            </View>
 
-        <MetricSummaryCard
-          title={`Average ${config.label}`}
-          value={config.formatValue(summary.average.value)}
-          unitSuffix={config.unitSuffix}
-          trendText={
-            formatTrendLabel(summary.average.trendLabel) ??
-            (metricType === 'heart_rate' ? 'Higher than usual' : undefined)
-          }
-          highestLabel={`${summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
-          lowestLabel={`${summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
-          insightText={insightText ?? insight?.generatedText}
-        />
+            <MetricSummaryCard
+              title={`Average ${config.label}`}
+              value={config.formatValue(summary.average.value)}
+              unitSuffix={config.unitSuffix}
+              trendText={
+                formatTrendLabel(summary.average.trendLabel) ?? undefined
+              }
+              highestLabel={`${summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
+              lowestLabel={`${summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
+              insightText={insightText ?? undefined}
+            />
+          </>
+        ) : (
+          <MetricStateCard
+            title="No data yet"
+            message="This metric will appear once wearable data syncs from the backend."
+          />
+        )}
       </ScrollView>
+    </View>
+  );
+}
+
+interface MetricStateCardProps {
+  title?: string;
+  message: string;
+}
+
+function MetricStateCard({ title, message }: MetricStateCardProps) {
+  return (
+    <View style={styles.stateCard}>
+      {title ? (
+        <Text style={styles.stateTitle}>{title}</Text>
+      ) : (
+        <ActivityIndicator />
+      )}
+      <Text style={styles.stateText}>{message}</Text>
     </View>
   );
 }
@@ -134,5 +167,32 @@ const styles = StyleSheet.create({
   },
   chartWrap: {
     marginBottom: 20,
+  },
+  stateCard: {
+    minHeight: 220,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 10,
+  },
+  stateTitle: {
+    fontFamily: Fonts.family,
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 22,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  stateText: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

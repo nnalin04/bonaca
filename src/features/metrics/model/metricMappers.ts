@@ -1,4 +1,4 @@
-import type { MetricDetailSummary } from '@/features/metrics/mockData';
+import type { MetricDetailSummary } from '@/features/metrics/model/metricDetailSummary';
 import type { MetricReading } from '@/types';
 import type {
   MetricDetailResponse,

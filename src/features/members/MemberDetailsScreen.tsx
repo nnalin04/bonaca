@@ -1,6 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/features/auth/AuthContext';
@@ -11,19 +17,9 @@ import {
 } from '@/features/members/components/MemberTabBar';
 import { MetricCard } from '@/features/members/components/MetricCard';
 import { MetricCardRow } from '@/features/members/components/MetricCardRow';
-import { MiniSparkline } from '@/features/members/components/MiniSparkline';
 import { NicknameModal } from '@/features/members/components/NicknameModal';
-import { SleepWeekBars } from '@/features/members/components/SleepWeekBars';
 import { SelectModal } from '@/features/onboarding/components/SelectModal';
 import { useMemberMetricSummaries } from '@/features/metrics/hooks/useMemberMetricSummaries';
-import {
-  activityReadings,
-  behaviourReadings,
-  mockMember,
-  sleepWeeklyBars,
-  sparklinePoints,
-  vitalsReadings,
-} from '@/features/members/mockData';
 import {
   formatTrendLabel,
   metricDisplayConfig,
@@ -43,11 +39,29 @@ const tabTitles: Record<MemberDetailsTab, string> = {
   behaviour: 'Behaviour',
 };
 
-const sparklineAxisLabels: Partial<
-  Record<MetricReading['metricType'], string[]>
+const metricOrderByTab: Record<
+  MemberDetailsTab,
+  MetricReading['metricType'][]
 > = {
-  heart_rate: ['6AM', '12PM', '6PM', '12AM'],
-  heart_rate_variability: ['1W', '2W', '3W', '4W'],
+  vitals: [
+    'heart_rate',
+    'heart_rate_variability',
+    'blood_oxygen',
+    'respiration_rate',
+    'sleep',
+    'stress_level',
+    'body_temperature',
+    'ecg',
+    'blood_glucose',
+    'vo2_max',
+  ],
+  activity: ['steps', 'calories', 'workouts', 'training_load'],
+  behaviour: [
+    'routine_adherence',
+    'screen_time',
+    'outdoor_time',
+    'last_active_location',
+  ],
 };
 
 export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
@@ -58,10 +72,11 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
   const [member, setMember] = useState<MemberResponse | null>(null);
-  const { readings: backendReadings } = useMemberMetricSummaries(
-    memberId,
-    '7d',
-  );
+  const {
+    readings: backendReadings,
+    isLoading: metricsLoading,
+    errorMessage: metricsError,
+  } = useMemberMetricSummaries(memberId, '7d');
 
   const refreshMember = useCallback(async () => {
     if (!accessToken) return;
@@ -79,8 +94,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
     };
   }, [accessToken, memberId]);
 
-  const displayName =
-    member?.nickname ?? member?.name ?? mockMember.nickname ?? mockMember.name;
+  const displayName = member?.nickname ?? member?.name ?? 'Member';
 
   const menuOptions = [
     member?.pinned ? 'Unpin from top' : 'Pin to top',
@@ -134,134 +148,59 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
     );
   };
 
-  const renderChartReading = (reading: MetricReading) => {
-    const config = metricDisplayConfig[reading.metricType];
-    const points = sparklinePoints[reading.metricType];
-    return (
-      <MetricCard
-        key={reading.id}
-        icon={config.icon}
-        iconColor={config.iconColor}
-        label={config.label}
-        value={config.formatValue(reading.value)}
-        unitSuffix={config.unitSuffix}
-        trendText={formatTrendLabel(reading.trendLabel)}
-        width="full"
-        pinned={member?.pinned && reading.metricType === 'heart_rate'}
-        accessory={
-          points ? (
-            <MiniSparkline
-              points={points}
-              xAxisLabels={sparklineAxisLabels[reading.metricType]}
-              lineColor={
-                reading.metricType === 'heart_rate_variability'
-                  ? Colors.chartLineSecondary
-                  : undefined
-              }
-              areaColor={
-                reading.metricType === 'heart_rate_variability'
-                  ? Colors.chartAreaFillSecondary
-                  : undefined
-              }
-            />
-          ) : undefined
-        }
-        onPress={() => goToMetric(reading)}
-      />
-    );
-  };
+  const renderActiveTab = () => {
+    if (metricsLoading) {
+      return (
+        <View style={styles.stateCard}>
+          <ActivityIndicator />
+          <Text style={styles.stateText}>Loading health metrics…</Text>
+        </View>
+      );
+    }
 
-  const byType = (type: MetricReading['metricType'], list: MetricReading[]) =>
-    list.find((r) => r.metricType === type);
-  const readingByType = (
-    type: MetricReading['metricType'],
-    fallbackList: MetricReading[],
-  ) => byType(type, backendReadings) ?? byType(type, fallbackList)!;
+    if (metricsError) {
+      return (
+        <View style={styles.stateCard}>
+          <Text style={styles.stateTitle}>Could not load metrics</Text>
+          <Text style={styles.stateText}>{metricsError}</Text>
+        </View>
+      );
+    }
 
-  const renderVitalsTab = () => {
-    const heartRate = readingByType('heart_rate', vitalsReadings);
-    const hrv = readingByType('heart_rate_variability', vitalsReadings);
-    const spo2 = readingByType('blood_oxygen', vitalsReadings);
-    const respiration = readingByType('respiration_rate', vitalsReadings);
-    const sleep = readingByType('sleep', vitalsReadings);
-    const stress = readingByType('stress_level', vitalsReadings);
-    const temperature = readingByType('body_temperature', vitalsReadings);
-    const ecg = readingByType('ecg', vitalsReadings);
-    const bloodGlucose = readingByType('blood_glucose', vitalsReadings);
-    const vo2Max = readingByType('vo2_max', vitalsReadings);
+    const orderedReadings = metricOrderByTab[activeTab]
+      .map((metricType) =>
+        backendReadings.find((reading) => reading.metricType === metricType),
+      )
+      .filter((reading): reading is MetricReading => Boolean(reading));
 
-    const sleepConfig = metricDisplayConfig.sleep;
+    if (orderedReadings.length === 0) {
+      return (
+        <View style={styles.stateCard}>
+          <Text style={styles.stateTitle}>No data yet</Text>
+          <Text style={styles.stateText}>
+            This section will fill in once wearable data syncs from the backend.
+          </Text>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.cardStack}>
-        {renderChartReading(heartRate)}
-        {renderChartReading(hrv)}
-        <MetricCardRow>
-          {renderReading(spo2)}
-          {renderReading(respiration)}
-        </MetricCardRow>
-        <MetricCard
-          icon={sleepConfig.icon}
-          iconColor={sleepConfig.iconColor}
-          label={sleepConfig.label}
-          value={sleepConfig.formatValue(sleep.value)}
-          trendText={formatTrendLabel(sleep.trendLabel)}
-          width="full"
-          accessory={<SleepWeekBars bars={sleepWeeklyBars} />}
-          onPress={() => goToMetric(sleep)}
-        />
-        <MetricCardRow>
-          {renderReading(stress)}
-          {renderReading(temperature)}
-        </MetricCardRow>
-        <MetricCardRow>
-          {renderReading(ecg)}
-          {renderReading(bloodGlucose)}
-        </MetricCardRow>
-        {renderChartReading(vo2Max)}
-      </View>
-    );
-  };
+        {orderedReadings.map((reading, index) => {
+          const nextReading = orderedReadings[index + 1];
+          if (index % 2 === 1) return null;
 
-  const renderActivityTab = () => {
-    const steps = readingByType('steps', activityReadings);
-    const calories = readingByType('calories', activityReadings);
-    const workouts = readingByType('workouts', activityReadings);
-    const trainingLoad = readingByType('training_load', activityReadings);
+          if (!nextReading) {
+            return renderReading(reading, 'full');
+          }
 
-    return (
-      <View style={styles.cardStack}>
-        <MetricCardRow>
-          {renderReading(steps)}
-          {renderReading(calories)}
-        </MetricCardRow>
-        <MetricCardRow>
-          {renderReading(workouts)}
-          {renderReading(trainingLoad)}
-        </MetricCardRow>
-      </View>
-    );
-  };
-
-  const renderBehaviourTab = () => {
-    const routine = readingByType('routine_adherence', behaviourReadings);
-    const screenTime = readingByType('screen_time', behaviourReadings);
-    const outdoorTime = readingByType('outdoor_time', behaviourReadings);
-    const lastActiveLocation = readingByType(
-      'last_active_location',
-      behaviourReadings,
-    );
-
-    return (
-      <View style={styles.cardStack}>
-        <MetricCardRow>
-          {renderReading(routine)}
-          {renderReading(screenTime)}
-        </MetricCardRow>
-        <MetricCardRow>
-          {renderReading(outdoorTime)}
-          {renderReading(lastActiveLocation)}
-        </MetricCardRow>
+          return (
+            <MetricCardRow key={`${reading.id}-${nextReading.id}`}>
+              {renderReading(reading)}
+              {renderReading(nextReading)}
+            </MetricCardRow>
+          );
+        })}
       </View>
     );
   };
@@ -271,7 +210,9 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
       <MemberDetailsHeader
         avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
         displayName={displayName}
-        statusMessage={member?.statusMessage ?? mockMember.statusMessage}
+        statusMessage={
+          member?.statusMessage ?? 'Health insights appear after data syncs'
+        }
         onPressBack={() => router.back()}
         onPressMenu={() => setMenuVisible(true)}
       />
@@ -289,9 +230,7 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
       >
         <Text style={styles.sectionTitle}>{tabTitles[activeTab]}</Text>
 
-        {activeTab === 'vitals' && renderVitalsTab()}
-        {activeTab === 'activity' && renderActivityTab()}
-        {activeTab === 'behaviour' && renderBehaviourTab()}
+        {renderActiveTab()}
       </ScrollView>
 
       <SelectModal
@@ -338,5 +277,32 @@ const styles = StyleSheet.create({
   },
   cardStack: {
     gap: 16,
+  },
+  stateCard: {
+    minHeight: 136,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 8,
+  },
+  stateTitle: {
+    fontFamily: Fonts.family,
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 22,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  stateText: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

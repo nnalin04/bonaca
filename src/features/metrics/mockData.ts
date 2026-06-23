@@ -1,11 +1,5 @@
 import type { Insight, MetricReading, MetricType } from '@/types';
-
-export interface MetricDetailSummary {
-  average: MetricReading;
-  chartValues: number[];
-  chartAxisMin?: number;
-  chartAxisMax?: number;
-}
+import type { MetricDetailSummary } from '@/features/metrics/model/metricDetailSummary';
 
 const now = new Date().toISOString();
 

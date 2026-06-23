@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/features/auth/AuthContext';
-import type { MetricDetailSummary } from '@/features/metrics/mockData';
 import { metricDetailToSummary } from '@/features/metrics/model/metricMappers';
+import type { MetricDetailSummary } from '@/features/metrics/model/metricDetailSummary';
 import { ApiError, getMetricDetail } from '@/lib/api';
 import type { MetricType } from '@/types';
 import type { MetricDetailResponse, MetricRangeQuery } from '@/types/metrics';
