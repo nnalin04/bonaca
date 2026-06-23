@@ -77,14 +77,15 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   row: {
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.onboardingCardBorder,
     borderRadius: Radii.row,
-    padding: 16,
+    paddingHorizontal: 16,
   },
   identity: {
     flexDirection: 'row',
