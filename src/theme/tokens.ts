@@ -24,6 +24,7 @@ export const Colors = {
   // Login & Onboarding additions (Figma nodes 43:3178, 49:268, 49:364, 60:595, 60:634)
   inputBorder: '#e3e5e5',
   inputBorderSubtle: '#ebebeb',
+  onboardingCardBorder: '#e5e5e5',
   placeholderText: '#72777a',
   inputChevron: '#8d9093',
   error: '#d63d3d',

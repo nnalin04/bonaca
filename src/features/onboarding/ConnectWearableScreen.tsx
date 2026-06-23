@@ -13,12 +13,6 @@ interface WearableOption {
   icon: number;
 }
 
-// Figma node 60:634 lists these four vendors. Per CLAUDE.md, Phase 1 scope is
-// Apple HealthKit + Google Health Connect only (on-device, no remote read) —
-// Fitbit/Garmin/Samsung Health/Oura are Phase 2 (separate OAuth scoping, not started)
-// and aren't even represented in the WearableProvider domain type yet. Rendered here
-// to stay pixel-faithful to the design; selecting an option does not wire up to any
-// real wearable SDK — see open question in the build report.
 const WEARABLE_OPTIONS: WearableOption[] = [
   { label: 'Fitbit', icon: require('../../../assets/images/wearables/fitbit.png') },
   { label: 'Garmin', icon: require('../../../assets/images/wearables/garmin.png') },
@@ -29,9 +23,6 @@ const WEARABLE_OPTIONS: WearableOption[] = [
 export function ConnectWearableScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  // Figma 60:634 ships with the "Continue" CTA hidden (visible: false in the source) —
-  // only "Skip for Now" shows until a wearable has actually been linked. No "connected"
-  // state screenshot was cached, so we approximate: selecting any option reveals Continue.
   const [hasSelection, setHasSelection] = useState(false);
 
   const goToHome = () => router.replace('/(tabs)/home');
@@ -75,7 +66,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 20,
   },
   tagline: {
     fontFamily: Fonts.family,
@@ -83,7 +74,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: Colors.textSecondary,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   list: {
     gap: 12,

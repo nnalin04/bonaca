@@ -21,7 +21,7 @@ export function WearableOptionCard({ label, iconSource, onPress }: WearableOptio
         <Image source={iconSource} style={styles.icon} contentFit="cover" />
         <Text style={styles.label}>{label}</Text>
       </View>
-      <IconChevronRight size={20} color={Colors.textSecondary} strokeWidth={1.75} />
+      <IconChevronRight size={24} color={Colors.textSecondary} strokeWidth={1.75} />
     </Pressable>
   );
 }
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: Radii.cta + 4,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.onboardingCardBorder,
     backgroundColor: Colors.white,
     flexDirection: 'row',
     alignItems: 'center',
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   leading: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   icon: {
     width: 32,
