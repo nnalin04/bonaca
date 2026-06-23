@@ -1,4 +1,4 @@
-import { IconPlus, IconUserCircle } from '@tabler/icons-react-native';
+import { IconPlus } from '@tabler/icons-react-native';
 import { Image, type ImageSource } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -16,7 +16,10 @@ export function ProfileAvatar({ photoSource, onPressEdit }: ProfileAvatarProps) 
         {photoSource ? (
           <Image source={photoSource} style={styles.photo} contentFit="cover" />
         ) : (
-          <IconUserCircle size={88} color={Colors.avatarPlaceholderFg} strokeWidth={1} />
+          <View style={styles.placeholder}>
+            <View style={styles.placeholderHead} />
+            <View style={styles.placeholderBody} />
+          </View>
         )}
       </View>
       <Pressable
@@ -49,6 +52,31 @@ const styles = StyleSheet.create({
   photo: {
     width: 104,
     height: 104,
+  },
+  placeholder: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: Colors.avatarPlaceholderInnerBg,
+    overflow: 'hidden',
+  },
+  placeholderHead: {
+    position: 'absolute',
+    top: 25,
+    left: 33,
+    width: 37,
+    height: 37,
+    borderRadius: 18.5,
+    backgroundColor: Colors.avatarPlaceholderFg,
+  },
+  placeholderBody: {
+    position: 'absolute',
+    top: 69,
+    left: 12,
+    width: 79,
+    height: 46,
+    borderRadius: 40,
+    backgroundColor: Colors.avatarPlaceholderFg,
   },
   editButton: {
     position: 'absolute',

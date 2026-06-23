@@ -25,8 +25,10 @@ export const Colors = {
   inputBorder: '#e3e5e5',
   inputBorderSubtle: '#ebebeb',
   placeholderText: '#72777a',
+  inputChevron: '#8d9093',
   error: '#d63d3d',
   avatarPlaceholderBg: '#e9e9e9',
+  avatarPlaceholderInnerBg: '#f7f7f7',
   avatarPlaceholderFg: '#007367',
   // Select Wearable Account / Payment Gateway additions (Figma nodes 197:10387, 197:11178, 222:1723, 225:3615, 197:10384, 197:11043)
   rowBorder: '#e6e5e5',

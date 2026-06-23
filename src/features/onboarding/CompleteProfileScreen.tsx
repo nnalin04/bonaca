@@ -213,11 +213,11 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 20,
     gap: 32,
   },
   form: {
-    gap: 20,
+    gap: 16,
   },
   errorText: {
     color: Colors.error,

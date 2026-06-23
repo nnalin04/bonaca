@@ -1,8 +1,7 @@
+import { IconChevronLeft } from '@tabler/icons-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BackButton } from '@/features/auth/components/BackButton';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface OnboardingHeaderProps {
@@ -11,17 +10,22 @@ interface OnboardingHeaderProps {
 }
 
 export function OnboardingHeader({ title, onBack }: OnboardingHeaderProps) {
-  const insets = useSafeAreaInsets();
-
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
-      style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      locations={[0, 0.95]}
+      start={{ x: 0.97, y: -0.43 }}
+      end={{ x: 0.21, y: 1.21 }}
+      style={styles.header}>
       <View style={styles.row}>
-        <BackButton onPress={onBack} />
+        <Pressable
+          style={styles.backButton}
+          onPress={onBack}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back">
+          <IconChevronLeft size={24} color={Colors.white} strokeWidth={2.5} />
+        </Pressable>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.spacer} />
       </View>
@@ -41,7 +45,13 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    height: 24,
+  },
+  backButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     flex: 1,
@@ -53,6 +63,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   spacer: {
-    width: 40,
+    width: 24,
   },
 });

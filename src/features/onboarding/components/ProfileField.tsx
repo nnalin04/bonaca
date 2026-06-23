@@ -40,7 +40,7 @@ export function ProfileField({
           placeholderTextColor={Colors.placeholderText}
         />
       )}
-      {isSelect && <IconChevronDown size={20} color={Colors.textSecondary} strokeWidth={1.75} />}
+      {isSelect && <IconChevronDown size={24} color={Colors.inputChevron} strokeWidth={1.75} />}
     </View>
   );
 
@@ -66,7 +66,7 @@ export function ProfileField({
 
 const styles = StyleSheet.create({
   field: {
-    gap: 8,
+    gap: 6,
   },
   label: {
     fontFamily: Fonts.family,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
     padding: 0,
   },
   valueText: {
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 16,
     lineHeight: 24,
-    color: Colors.textPrimary,
+    color: Colors.textSecondary,
   },
   placeholderText: {
     fontFamily: Fonts.family,
