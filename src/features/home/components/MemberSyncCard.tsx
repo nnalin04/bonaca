@@ -22,7 +22,8 @@ export function MemberSyncCard({
       style={styles.card}
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={displayName}>
+      accessibilityLabel={displayName}
+    >
       <Image source={avatarSource} style={styles.avatar} contentFit="cover" />
       <View style={styles.textBlock}>
         <Text style={styles.name}>{displayName}</Text>
@@ -73,8 +74,6 @@ const styles = StyleSheet.create({
   refreshPill: {
     width: 24,
     height: 24,
-    borderRadius: 8,
-    backgroundColor: Colors.tabBarTrack,
     alignItems: 'center',
     justifyContent: 'center',
   },
