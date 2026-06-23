@@ -9,18 +9,16 @@ import {
 } from '@tabler/icons-react-native';
 import { useRouter, type Href } from 'expo-router';
 import type { ComponentType } from 'react';
-import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/features/auth/AuthContext';
 import { useMembers } from '@/features/members';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
 import { ProfileSummaryCard } from '@/features/profile/components/ProfileSummaryCard';
 import { SettingsListItem } from '@/features/profile/components/SettingsListItem';
 import { WearableConnectCard } from '@/features/profile/components/WearableConnectCard';
 import { WearableConnectedCard } from '@/features/profile/components/WearableConnectedCard';
-import { getMe } from '@/lib/api';
+import { useProfileSummary } from '@/features/profile/hooks/useProfileSummary';
 import { Colors } from '@/theme/tokens';
 import type { WearableConnection } from '@/types';
 
@@ -45,20 +43,8 @@ interface SettingsRowConfig {
 export function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { accessToken } = useAuth();
   const { self } = useMembers();
-  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!accessToken) return;
-    getMe(accessToken).then((result) => {
-      if (!cancelled) setPhoneNumber(result.phoneNumber);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+  const { phoneNumber } = useProfileSummary();
 
   const settingsRows: SettingsRowConfig[] = [
     {
@@ -85,7 +71,12 @@ export function ProfileScreen() {
       label: 'Documentation',
       onPress: () => {},
     },
-    { key: 'terms', icon: IconArticle, label: 'Terms & Conditions', onPress: () => {} },
+    {
+      key: 'terms',
+      icon: IconArticle,
+      label: 'Terms & Conditions',
+      onPress: () => {},
+    },
     {
       key: 'privacy',
       icon: IconFileTextShield,
@@ -102,11 +93,18 @@ export function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
-      <ProfileHeader title="Profile & Settings" onPressBack={() => router.back()} />
+      <ProfileHeader
+        title="Profile & Settings"
+        onPressBack={() => router.back()}
+      />
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}>
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <ProfileSummaryCard
           avatarSource={require('../../../assets/images/avatars/prasanna-kumar.png')}
           name={self?.nickname ?? self?.name ?? ''}
@@ -119,12 +117,16 @@ export function ProfileScreen() {
             <WearableConnectedCard
               providerLabel={providerLabels[wearableConnection.provider]}
               syncLabel={
-                wearableConnection.lastSyncedAt ? 'Last synced: Just now' : 'Not yet synced'
+                wearableConnection.lastSyncedAt
+                  ? 'Last synced: Just now'
+                  : 'Not yet synced'
               }
               onPressDisconnect={() => {}}
             />
           ) : (
-            <WearableConnectCard onPressConnect={() => router.push('/(auth)/connect-wearable')} />
+            <WearableConnectCard
+              onPressConnect={() => router.push('/(auth)/connect-wearable')}
+            />
           )}
         </View>
 
