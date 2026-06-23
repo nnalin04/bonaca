@@ -24,10 +24,16 @@ export function PaymentGatewayScreen({ accountId }: PaymentGatewayScreenProps) {
     errorMessage,
     activateMockPayment,
   } = useCurrentSubscription(accountId);
+  const isActive = subscription?.status === 'active';
 
   const handlePay = async () => {
+    if (isActive) {
+      router.replace('/subscription');
+      return;
+    }
+
     const activated = await activateMockPayment();
-    if (activated) router.back();
+    if (activated) router.replace('/subscription');
   };
 
   return (
@@ -60,16 +66,23 @@ export function PaymentGatewayScreen({ accountId }: PaymentGatewayScreenProps) {
           ) : null}
 
           <Pressable
-            style={[styles.payButton, isPaying && styles.payButtonDisabled]}
+            style={[
+              styles.payButton,
+              (isPaying || isActive) && styles.payButtonDisabled,
+            ]}
             onPress={handlePay}
             disabled={isPaying || isLoading}
             accessibilityRole="button"
-            accessibilityLabel="Activate subscription at ₹249"
+            accessibilityLabel={
+              isActive ? 'Subscription active' : 'Activate subscription at ₹249'
+            }
           >
             {isPaying ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.payText}>Activate at ₹249</Text>
+              <Text style={styles.payText}>
+                {isActive ? 'Subscription active' : 'Activate at ₹249'}
+              </Text>
             )}
           </Pressable>
 

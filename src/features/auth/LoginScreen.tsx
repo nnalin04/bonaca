@@ -2,11 +2,13 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 
@@ -42,47 +44,53 @@ export function LoginScreen() {
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar style="light" />
-      <AuthHero
-        tagline={'Stay gently connected to your\nfamily’s daily wellbeing'}
-        height={464}
-        contentTop={232}
-        contentGap={32}
-      />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={styles.dismissArea}>
+          <StatusBar style="light" />
+          <AuthHero
+            tagline={'Stay gently connected to your\nfamily’s daily wellbeing'}
+            height={464}
+            contentTop={232}
+            contentGap={32}
+          />
 
-      <View style={styles.card}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>Login or Signup</Text>
-          <Text style={styles.subtitle}>
-            Enter your mobile number to get started
-          </Text>
-        </View>
+          <View style={styles.card}>
+            <View style={styles.titleBlock}>
+              <Text style={styles.title}>Login or Signup</Text>
+              <Text style={styles.subtitle}>
+                Enter your mobile number to get started
+              </Text>
+            </View>
 
-        <MobileNumberField
-          countryCode="+91"
-          value={mobileNumber}
-          onChangeText={setMobileNumber}
-        />
-        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-
-        <View style={styles.ctaBlock}>
-          {isSubmitting ? (
-            <ActivityIndicator />
-          ) : (
-            <PrimaryButton
-              label="Send OTP"
-              disabled={!canSubmit}
-              onPress={handleSubmit}
+            <MobileNumberField
+              countryCode="+91"
+              value={mobileNumber}
+              onChangeText={setMobileNumber}
             />
-          )}
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel="Privacy Policy"
-          >
-            <Text style={styles.privacyLink}>Privacy Policy</Text>
-          </Pressable>
+            {errorMessage && (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            )}
+
+            <View style={styles.ctaBlock}>
+              {isSubmitting ? (
+                <ActivityIndicator />
+              ) : (
+                <PrimaryButton
+                  label="Send OTP"
+                  disabled={!canSubmit}
+                  onPress={handleSubmit}
+                />
+              )}
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Privacy Policy"
+              >
+                <Text style={styles.privacyLink}>Privacy Policy</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }
@@ -91,6 +99,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.headerGradientEnd,
+  },
+  dismissArea: {
+    flex: 1,
   },
   card: {
     flex: 1,
