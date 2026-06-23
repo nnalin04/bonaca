@@ -7,7 +7,7 @@ export function EmptySharedState() {
   return (
     <View style={styles.card}>
       <View style={styles.content}>
-        <IconUsers size={80} color={Colors.iconMuted} strokeWidth={1.5} />
+        <IconUsers size={80} color={Colors.emptyStateIcon} strokeWidth={1.5} />
         <View style={styles.textBlock}>
           <Text style={styles.title}>Nothing here yet</Text>
           <Text style={styles.subtitle}>

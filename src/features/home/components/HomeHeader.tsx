@@ -22,9 +22,9 @@ export function HomeHeader({
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
-      locations={[0.03, 0.81]}
-      start={{ x: 0.95, y: 0.29 }}
-      end={{ x: 0.05, y: 0.71 }}
+      locations={[0, 0.95]}
+      start={{ x: 0.97, y: -0.43 }}
+      end={{ x: 0.21, y: 1.21 }}
       style={styles.header}>
       <View style={styles.greetingBlock}>
         <Text style={styles.greeting}>Hello {greetingName}!</Text>
@@ -38,7 +38,7 @@ export function HomeHeader({
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Open notifications">
-          <IconBell size={28} color={Colors.white} strokeWidth={1.75} />
+          <IconBell size={28} color={Colors.tabBarTrack} strokeWidth={1.75} />
           {unreadNotificationCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{unreadNotificationCount}</Text>
@@ -52,7 +52,7 @@ export function HomeHeader({
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Open profile">
-          <IconUserCircle size={28} color={Colors.white} strokeWidth={1.75} />
+          <IconUserCircle size={28} color={Colors.tabBarTrack} strokeWidth={1.75} />
         </Pressable>
       </View>
     </LinearGradient>
@@ -65,8 +65,9 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: Radii.headerCorner,
     borderBottomRightRadius: Radii.headerCorner,
     paddingHorizontal: 16,
+    paddingTop: 62,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   greetingBlock: {
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 0,
   },
   cta: {
     width: 48,

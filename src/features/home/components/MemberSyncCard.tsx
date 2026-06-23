@@ -1,3 +1,4 @@
+import { IconRefresh } from '@tabler/icons-react-native';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -27,6 +28,9 @@ export function MemberSyncCard({
         <Text style={styles.name}>{displayName}</Text>
         <Text style={styles.sync}>{syncLabel}</Text>
       </View>
+      <View style={styles.refreshPill}>
+        <IconRefresh size={16} color={Colors.accent} strokeWidth={1.75} />
+      </View>
     </Pressable>
   );
 }
@@ -42,7 +46,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 11,
+    paddingHorizontal: 12,
   },
   avatar: {
     width: 56,
@@ -50,6 +54,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
   },
   textBlock: {
+    flex: 1,
     gap: 2,
   },
   name: {
@@ -64,5 +69,13 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     color: Colors.textSecondary,
+  },
+  refreshPill: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: Colors.tabBarTrack,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

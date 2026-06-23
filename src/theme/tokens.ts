@@ -10,6 +10,7 @@ export const Colors = {
   white: '#ffffff',
   badge: '#f05252',
   iconMuted: '#c5cdd6',
+  emptyStateIcon: '#d1d3e7',
   // Notifications additions (Figma node 286:15753)
   avatarFallbackBackground: '#e9e9e9',
   avatarIcon: '#007366',
