@@ -15,12 +15,14 @@ import {
   RangeTabBar,
   type MetricRange,
 } from '@/features/metrics/components/RangeTabBar';
+import { useMetricDetail } from '@/features/metrics/hooks/useMetricDetail';
 import {
   metricDetailSummaries,
   metricInsights,
 } from '@/features/metrics/mockData';
 import { Colors } from '@/theme/tokens';
 import type { MetricType } from '@/types';
+import type { MetricRangeQuery } from '@/types/metrics';
 
 interface MetricDetailsScreenProps {
   memberId: string;
@@ -34,6 +36,13 @@ const xAxisLabelsByRange: Record<MetricRange, string[]> = {
   '1Y': ['Jan', 'Apr', 'Jul', 'Oct'],
 };
 
+const backendRangeByUiRange: Record<MetricRange, MetricRangeQuery> = {
+  '1D': '24h',
+  '7D': '7d',
+  '4W': '30d',
+  '1Y': '30d',
+};
+
 export function MetricDetailsScreen({
   memberId,
   metricType,
@@ -42,11 +51,14 @@ export function MetricDetailsScreen({
   const insets = useSafeAreaInsets();
   const [range, setRange] = useState<MetricRange>('1D');
   const [dateOffset, setDateOffset] = useState(0);
-
-  void memberId;
+  const { summary: backendSummary, insightText } = useMetricDetail(
+    memberId,
+    metricType,
+    backendRangeByUiRange[range],
+  );
 
   const config = metricDisplayConfig[metricType];
-  const summary = metricDetailSummaries[metricType];
+  const summary = backendSummary ?? metricDetailSummaries[metricType];
   const insight = metricInsights[metricType];
 
   const dateLabel =
@@ -98,7 +110,7 @@ export function MetricDetailsScreen({
           }
           highestLabel={`${summary.average.rangeMax ?? summary.average.value} ${config.unitSuffix}`.trim()}
           lowestLabel={`${summary.average.rangeMin ?? summary.average.value} ${config.unitSuffix}`.trim()}
-          insightText={insight?.generatedText}
+          insightText={insightText ?? insight?.generatedText}
         />
       </ScrollView>
     </View>

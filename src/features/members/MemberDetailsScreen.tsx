@@ -15,6 +15,7 @@ import { MiniSparkline } from '@/features/members/components/MiniSparkline';
 import { NicknameModal } from '@/features/members/components/NicknameModal';
 import { SleepWeekBars } from '@/features/members/components/SleepWeekBars';
 import { SelectModal } from '@/features/onboarding/components/SelectModal';
+import { useMemberMetricSummaries } from '@/features/metrics/hooks/useMemberMetricSummaries';
 import {
   activityReadings,
   behaviourReadings,
@@ -42,7 +43,9 @@ const tabTitles: Record<MemberDetailsTab, string> = {
   behaviour: 'Behaviour',
 };
 
-const sparklineAxisLabels: Partial<Record<MetricReading['metricType'], string[]>> = {
+const sparklineAxisLabels: Partial<
+  Record<MetricReading['metricType'], string[]>
+> = {
   heart_rate: ['6AM', '12PM', '6PM', '12AM'],
   heart_rate_variability: ['1W', '2W', '3W', '4W'],
 };
@@ -55,6 +58,10 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [nicknameModalVisible, setNicknameModalVisible] = useState(false);
   const [member, setMember] = useState<MemberResponse | null>(null);
+  const { readings: backendReadings } = useMemberMetricSummaries(
+    memberId,
+    '7d',
+  );
 
   const refreshMember = useCallback(async () => {
     if (!accessToken) return;
@@ -72,7 +79,8 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
     };
   }, [accessToken, memberId]);
 
-  const displayName = member?.nickname ?? member?.name ?? mockMember.nickname ?? mockMember.name;
+  const displayName =
+    member?.nickname ?? member?.name ?? mockMember.nickname ?? mockMember.name;
 
   const menuOptions = [
     member?.pinned ? 'Unpin from top' : 'Pin to top',
@@ -117,7 +125,9 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
         label={config.label}
         value={config.formatValue(reading.value)}
         unitSuffix={config.unitSuffix}
-        trendText={reading.customCaption ?? formatTrendLabel(reading.trendLabel)}
+        trendText={
+          reading.customCaption ?? formatTrendLabel(reading.trendLabel)
+        }
         width={width}
         onPress={() => goToMetric(reading)}
       />
@@ -163,18 +173,22 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
 
   const byType = (type: MetricReading['metricType'], list: MetricReading[]) =>
     list.find((r) => r.metricType === type);
+  const readingByType = (
+    type: MetricReading['metricType'],
+    fallbackList: MetricReading[],
+  ) => byType(type, backendReadings) ?? byType(type, fallbackList)!;
 
   const renderVitalsTab = () => {
-    const heartRate = byType('heart_rate', vitalsReadings)!;
-    const hrv = byType('heart_rate_variability', vitalsReadings)!;
-    const spo2 = byType('blood_oxygen', vitalsReadings)!;
-    const respiration = byType('respiration_rate', vitalsReadings)!;
-    const sleep = byType('sleep', vitalsReadings)!;
-    const stress = byType('stress_level', vitalsReadings)!;
-    const temperature = byType('body_temperature', vitalsReadings)!;
-    const ecg = byType('ecg', vitalsReadings)!;
-    const bloodGlucose = byType('blood_glucose', vitalsReadings)!;
-    const vo2Max = byType('vo2_max', vitalsReadings)!;
+    const heartRate = readingByType('heart_rate', vitalsReadings);
+    const hrv = readingByType('heart_rate_variability', vitalsReadings);
+    const spo2 = readingByType('blood_oxygen', vitalsReadings);
+    const respiration = readingByType('respiration_rate', vitalsReadings);
+    const sleep = readingByType('sleep', vitalsReadings);
+    const stress = readingByType('stress_level', vitalsReadings);
+    const temperature = readingByType('body_temperature', vitalsReadings);
+    const ecg = readingByType('ecg', vitalsReadings);
+    const bloodGlucose = readingByType('blood_glucose', vitalsReadings);
+    const vo2Max = readingByType('vo2_max', vitalsReadings);
 
     const sleepConfig = metricDisplayConfig.sleep;
 
@@ -210,10 +224,10 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   };
 
   const renderActivityTab = () => {
-    const steps = byType('steps', activityReadings)!;
-    const calories = byType('calories', activityReadings)!;
-    const workouts = byType('workouts', activityReadings)!;
-    const trainingLoad = byType('training_load', activityReadings)!;
+    const steps = readingByType('steps', activityReadings);
+    const calories = readingByType('calories', activityReadings);
+    const workouts = readingByType('workouts', activityReadings);
+    const trainingLoad = readingByType('training_load', activityReadings);
 
     return (
       <View style={styles.cardStack}>
@@ -230,13 +244,13 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
   };
 
   const renderBehaviourTab = () => {
-    const routine = byType('routine_adherence', behaviourReadings)!;
-    const screenTime = byType('screen_time', behaviourReadings)!;
-    const outdoorTime = byType('outdoor_time', behaviourReadings)!;
-    const lastActiveLocation = byType(
+    const routine = readingByType('routine_adherence', behaviourReadings);
+    const screenTime = readingByType('screen_time', behaviourReadings);
+    const outdoorTime = readingByType('outdoor_time', behaviourReadings);
+    const lastActiveLocation = readingByType(
       'last_active_location',
       behaviourReadings,
-    )!;
+    );
 
     return (
       <View style={styles.cardStack}>
@@ -271,7 +285,8 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
           styles.content,
           { paddingBottom: insets.bottom + 98 },
         ]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.sectionTitle}>{tabTitles[activeTab]}</Text>
 
         {activeTab === 'vitals' && renderVitalsTab()}
