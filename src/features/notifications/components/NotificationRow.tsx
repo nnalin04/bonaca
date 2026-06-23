@@ -1,4 +1,3 @@
-import { IconUserFilled } from '@tabler/icons-react-native';
 import { Image, type ImageSource } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -29,7 +28,10 @@ export function NotificationRow({
         <Image source={avatarSource} style={styles.avatar} contentFit="cover" />
       ) : (
         <View style={styles.avatarFallback}>
-          <IconUserFilled size={22} color={Colors.avatarIcon} />
+          <View style={styles.avatarFallbackInner}>
+            <View style={styles.avatarHead} />
+            <View style={styles.avatarBody} />
+          </View>
         </View>
       )}
 
@@ -66,15 +68,44 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.avatarBorder,
   },
   avatarFallback: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: Colors.avatarFallbackBackground,
+    borderWidth: 1,
+    borderColor: Colors.avatarBorder,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  avatarFallbackInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.avatarPlaceholderInnerBg,
+    overflow: 'hidden',
+  },
+  avatarHead: {
+    position: 'absolute',
+    top: 10,
+    left: 13,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.avatarIcon,
+  },
+  avatarBody: {
+    position: 'absolute',
+    top: 26,
+    left: 5,
+    width: 30,
+    height: 18,
+    borderRadius: 15,
+    backgroundColor: Colors.avatarIcon,
   },
   textBlock: {
     flex: 1,

@@ -45,6 +45,8 @@ const styles = StyleSheet.create({
     height: 104,
     borderRadius: 52,
     backgroundColor: Colors.avatarPlaceholderBg,
+    borderWidth: 1,
+    borderColor: Colors.avatarBorder,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

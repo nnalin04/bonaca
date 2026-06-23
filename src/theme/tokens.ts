@@ -29,6 +29,7 @@ export const Colors = {
   placeholderText: '#72777a',
   inputChevron: '#8d9093',
   error: '#d63d3d',
+  avatarBorder: '#eedada',
   avatarPlaceholderBg: '#e9e9e9',
   avatarPlaceholderInnerBg: '#f7f7f7',
   avatarPlaceholderFg: '#007367',
