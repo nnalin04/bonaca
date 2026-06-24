@@ -47,3 +47,6 @@ example
 
 # Figma reference screenshots/assets pulled during development
 /.design-reference
+
+# Codex isolated implementation worktrees
+/.worktrees
