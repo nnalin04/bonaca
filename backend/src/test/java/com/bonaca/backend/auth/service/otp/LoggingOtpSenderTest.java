@@ -10,13 +10,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 
 /**
- * Contract from LoggingOtpSender's class Javadoc: it's the stand-in for every non-prod profile
- * while MSG91's DLT template registration is pending (docs/TECHNICAL_REQUIREMENTS.md §4) — it
- * must never throw (OTP requests have to keep working in dev/test) and must log the code
- * somewhere a developer can read it, since there's no real SMS delivery.
+ * Contract from LoggingOtpSender's class Javadoc: fallback when no real OtpSender bean is
+ * present (i.e. MSG91 auth-key not configured). Must never throw so OTP requests keep working
+ * in dev/test without real SMS delivery.
  */
 class LoggingOtpSenderTest {
 
@@ -53,10 +52,10 @@ class LoggingOtpSenderTest {
     }
 
     @Test
-    void isActiveInEveryProfileExceptProd() {
-        Profile profile = LoggingOtpSender.class.getAnnotation(Profile.class);
+    void isActivatedAsConditionalFallbackWhenNoOtpSenderBeanPresent() {
+        ConditionalOnMissingBean conditional = LoggingOtpSender.class.getAnnotation(ConditionalOnMissingBean.class);
 
-        assertThat(profile).isNotNull();
-        assertThat(profile.value()).containsExactly("!prod");
+        assertThat(conditional).isNotNull();
+        assertThat(conditional.value()).contains(OtpSender.class);
     }
 }

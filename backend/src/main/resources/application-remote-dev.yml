@@ -10,6 +10,9 @@ bonaca:
   proxy-security:
     enabled: true
     secret: ${BACKEND_SECRET}
+  msg91:
+    auth-key: ${MSG91_AUTH_KEY:}
+    template-id: ${MSG91_TEMPLATE_ID:}
 
 logging:
   level:

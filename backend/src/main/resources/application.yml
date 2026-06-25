@@ -20,6 +20,9 @@ bonaca:
   proxy-security:
     enabled: false
     secret: ""
+  msg91:
+    auth-key: ""
+    template-id: ""
     access-token-ttl-minutes: 15
     refresh-token-ttl-days: 30
   otp:

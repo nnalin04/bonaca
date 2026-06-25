@@ -2,6 +2,7 @@ package com.bonaca.backend.common;
 
 import com.bonaca.backend.auth.exception.InvalidOtpException;
 import com.bonaca.backend.auth.exception.InvalidRefreshTokenException;
+import com.bonaca.backend.auth.exception.OtpDeliveryException;
 import com.bonaca.backend.auth.exception.OtpExpiredException;
 import com.bonaca.backend.auth.exception.OtpLockedException;
 import com.bonaca.backend.auth.exception.RateLimitExceededException;
@@ -27,6 +28,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler({InvalidOtpException.class, OtpExpiredException.class, OtpLockedException.class, InvalidRefreshTokenException.class})
     public ResponseEntity<ErrorResponse> handleUnauthorized(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(OtpDeliveryException.class)
+    public ResponseEntity<ErrorResponse> handleOtpDelivery(OtpDeliveryException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(RateLimitExceededException.class)
