@@ -45,7 +45,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/otp/request",
                                 "/api/v1/auth/otp/verify",
                                 "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout")
+                                "/api/v1/auth/logout",
+                                "/api/v1/webhooks/spike",
+                                "/api/v1/webhooks/razorpay")
                         .permitAll()
                         .anyRequest()
                         .authenticated())

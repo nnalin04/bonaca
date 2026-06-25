@@ -33,6 +33,12 @@ public class Subscription {
     @Column(name = "renewed_at")
     private Instant renewedAt;
 
+    @Column(name = "razorpay_subscription_id", length = 60)
+    private String razorpaySubscriptionId;
+
+    @Column(name = "next_billing_at")
+    private Instant nextBillingAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -80,6 +86,22 @@ public class Subscription {
 
     public Instant getRenewedAt() {
         return renewedAt;
+    }
+
+    public String getRazorpaySubscriptionId() {
+        return razorpaySubscriptionId;
+    }
+
+    public void setRazorpaySubscriptionId(String razorpaySubscriptionId) {
+        this.razorpaySubscriptionId = razorpaySubscriptionId;
+    }
+
+    public Instant getNextBillingAt() {
+        return nextBillingAt;
+    }
+
+    public void setNextBillingAt(Instant nextBillingAt) {
+        this.nextBillingAt = nextBillingAt;
     }
 
     public Instant getCreatedAt() {

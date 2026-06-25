@@ -17,4 +17,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
 
     /** Used by notifications.service.NotificationGenerationService's nightly lapsed-subscription scan. */
     List<Subscription> findByStatus(SubscriptionStatus status);
+
+    /** Used by RazorpayWebhookController to resolve an account from a webhook payload. */
+    Optional<Subscription> findByRazorpaySubscriptionId(String razorpaySubscriptionId);
 }

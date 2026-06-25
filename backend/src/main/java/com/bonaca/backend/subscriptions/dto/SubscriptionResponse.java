@@ -4,7 +4,13 @@ import com.bonaca.backend.subscriptions.model.Subscription;
 import java.time.Instant;
 import java.util.UUID;
 
-public record SubscriptionResponse(UUID id, UUID accountId, String status, Instant trialEndsAt, Instant renewedAt) {
+public record SubscriptionResponse(
+        UUID id,
+        UUID accountId,
+        String status,
+        Instant trialEndsAt,
+        Instant renewedAt,
+        String razorpaySubscriptionId) {
 
     public static SubscriptionResponse from(Subscription subscription) {
         return new SubscriptionResponse(
@@ -12,6 +18,7 @@ public record SubscriptionResponse(UUID id, UUID accountId, String status, Insta
                 subscription.getAccountId(),
                 subscription.getStatus().name().toLowerCase(),
                 subscription.getTrialEndsAt(),
-                subscription.getRenewedAt());
+                subscription.getRenewedAt(),
+                subscription.getRazorpaySubscriptionId());
     }
 }

@@ -32,3 +32,12 @@ bonaca:
   proxy-security:
     enabled: false
     secret: ""
+  spike:
+    api-key: ""
+    webhook-secret: ""
+    base-url: ""
+  razorpay:
+    key-id: ""
+    key-secret: ""
+    webhook-secret: ""
+    plan-id: ""

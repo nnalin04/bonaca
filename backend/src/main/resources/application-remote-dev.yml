@@ -12,6 +12,8 @@ bonaca:
     secret: ${BACKEND_SECRET}
   # MSG91: set BONACA_MSG91_AUTH_KEY and BONACA_MSG91_TEMPLATE_ID env vars to activate real SMS.
   # Leave unset to fall back to LoggingOtpSender (OTP printed to console).
+  # Spike: set BONACA_SPIKE_API_KEY, BONACA_SPIKE_WEBHOOK_SECRET env vars to activate wearable sync.
+  # Razorpay: set BONACA_RAZORPAY_KEY_ID, BONACA_RAZORPAY_KEY_SECRET, BONACA_RAZORPAY_WEBHOOK_SECRET, BONACA_RAZORPAY_PLAN_ID.
 
 logging:
   level:
