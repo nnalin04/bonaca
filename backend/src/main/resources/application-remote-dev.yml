@@ -10,9 +10,8 @@ bonaca:
   proxy-security:
     enabled: true
     secret: ${BACKEND_SECRET}
-  msg91:
-    auth-key: ${MSG91_AUTH_KEY:}
-    template-id: ${MSG91_TEMPLATE_ID:}
+  # MSG91: set BONACA_MSG91_AUTH_KEY and BONACA_MSG91_TEMPLATE_ID env vars to activate real SMS.
+  # Leave unset to fall back to LoggingOtpSender (OTP printed to console).
 
 logging:
   level:
