@@ -1,23 +1,39 @@
 # Bonaca — What's Built, What's Left, and What It Costs
 
-_Written 2026-06-26. Source of truth for product decisions: [`docs/PRD.md`](PRD.md) / `docs/PRD.pdf`._
+_Last updated 2026-06-26. Source of truth for product decisions: [`docs/PRD.md`](PRD.md) / `docs/PRD.pdf`._
 
 ---
 
 ## Part 1 — External APIs and Paid Resources
 
-Every third-party integration the product needs, with cost and blocking status.
-
 ### 1.1 MSG91 — OTP SMS delivery
 
 | | |
 |---|---|
-| **What it does** | Sends the 4-digit login OTP to the user's phone number via SMS |
-| **Why MSG91** | Cheapest for Indian numbers (~₹0.15/OTP), built-in DLT workflow |
-| **Cost** | ~₹0.15 per OTP. 1,000 test users × ~5 OTPs each = ~₹750 to launch |
-| **Status** | ✅ Code written and deployed. Activates when `BONACA_MSG91_AUTH_KEY` env var is set on Oracle. Currently falling back to logging. |
-| **Blocker** | **DLT registration is mandatory before any SMS can be sent to Indian numbers.** TRAI will silently reject SMS without it. Steps: (1) Create MSG91 account, (2) Register your entity on DLT portal (~2–7 business days), (3) Apply for sender ID `BONACA`, (4) Register the exact OTP template: `"Your Bonaca OTP is ##VAR1##. Valid for 5 minutes. Do not share with anyone."` (~1–3 days). Only after approval: add `BONACA_MSG91_AUTH_KEY` and `BONACA_MSG91_TEMPLATE_ID` to Oracle `.env` and restart the container. |
-| **Signup** | msg91.com |
+| **What it does** | Sends the 4-digit login OTP to the user's phone via SMS |
+| **Cost** | ~₹0.15 per OTP |
+| **Code status** | ✅ Fully implemented. Activates when `BONACA_MSG91_AUTH_KEY` env var is set on Oracle. Falls back to logging OTP to console when not configured. |
+
+**External setup required (do this now — ~1 week lead time):**
+
+1. Create an account at [msg91.com](https://msg91.com)
+2. Go to **Sender ID** → apply for sender ID `BONACA` (or `BNCA` — 6 chars max). Takes 1–3 business days.
+3. Go to **DLT Registration** in the MSG91 dashboard. You must register on TRAI's DLT portal (through one of the telecom operators — Airtel, Vodafone/Vi, BSNL, etc.):
+   - Entity name: your company name
+   - Entity type: Principal Entity
+   - Registration takes 2–7 business days
+4. Once entity is approved, register the template. Exact text (do not deviate):
+   ```
+   Your Bonaca OTP is ##VAR1##. Valid for 5 minutes. Do not share with anyone.
+   ```
+   Template type: **Transactional**. Header: your approved sender ID.
+5. After both entity + template are approved, get your **Auth Key** from MSG91 dashboard → API → Auth Key.
+6. Add to Oracle `~/bonaca/deploy/.env`:
+   ```
+   BONACA_MSG91_AUTH_KEY=<your-auth-key>
+   BONACA_MSG91_TEMPLATE_ID=<your-template-id>
+   ```
+7. Restart container (no rebuild needed): `cd ~/bonaca/deploy && docker compose up -d --force-recreate backend`
 
 ---
 
@@ -25,38 +41,130 @@ Every third-party integration the product needs, with cost and blocking status.
 
 | | |
 |---|---|
-| **What it does** | Syncs health data from Garmin, Fitbit, Samsung Health, Oura, Apple Watch etc. from the vendor's cloud into Bonaca — no requirement for the parent to run a sync task on their own phone |
-| **Why Spike** | Only cross-vendor cloud aggregator that doesn't require on-device SDK per platform; one API covers all major wearables |
-| **Cost** | Billed per connected device/month. Pricing on request — budget ~$1–3/device/month at small scale |
-| **Status** | ❌ Not integrated. Backend has `MetricIngestionService`, `MetricReading`, `MetricBaseline`, `InsightGenerationService` models and DB schema ready, but no Spike API client calling them. All metric data is mocked in the frontend. |
-| **What needs building** | Spike OAuth device-connect flow → webhook/polling ingest → `MetricIngestionService` → `MetricsRollupScheduler` (already scheduled at 02:00 daily) → baseline recalculation. Also the `ConnectWearableScreen` / `SelectWearableAccountScreen` front-end flows need wiring to real Spike auth URLs. |
-| **Signup** | spike.sh — requires contacting them for API access and pricing |
+| **What it does** | Syncs health data (heart rate, steps, sleep, HRV, SpO₂, workouts etc.) from Garmin, Fitbit, Samsung Health, Oura, Apple Watch, and 30+ other wearables via their cloud |
+| **Cost** | Billed per connected device/month. Contact Spike for pricing (~$1–3/device/month at small scale) |
+| **Code status** | ✅ Fully implemented. Backend: `WearableController`, `SpikeApiClient`, `SpikeWebhookController`, `WearableService`, `wearable_connections` table. Frontend: `ConnectWearableScreen`, `SelectWearableAccountScreen` open Spike's OAuth URL in the device browser. Activates when `BONACA_SPIKE_API_KEY` env var is set. |
+
+**External setup required:**
+
+1. Sign up at [spike.sh](https://spike.sh) → request API access (it may be invite/waitlist). Email them at their contact page explaining your use case.
+2. Once approved, in the Spike dashboard:
+   - Go to **API Keys** → create a key. Copy it.
+   - Go to **Webhooks** → add a new webhook URL: `https://bonaca.vercel.app/api/v1/webhooks/spike`
+   - Note the **Webhook Secret** shown after creation.
+3. Create a **Razorpay Plan** (or skip if doing manual billing) — Spike may require you to map users to your system's concept of a "team user". Follow their team API docs.
+4. Add to Oracle `~/bonaca/deploy/.env`:
+   ```
+   BONACA_SPIKE_API_KEY=<your-spike-api-key>
+   BONACA_SPIKE_WEBHOOK_SECRET=<your-webhook-secret>
+   ```
+5. Rebuild and redeploy (new code needed):
+   ```bash
+   # On your Mac, from the Bonaca project root:
+   # Build a fresh tarball and upload (or let CI do it once set up)
+   cd ~/bonaca/deploy && bash deploy.sh ~/bonaca/source
+   ```
+
+**How the connect flow works after setup:**
+- User taps a wearable brand in the app
+- App calls `POST /api/v1/members/{memberId}/wearable/connect`
+- Backend creates a Spike "team user" and returns a `connectUrl`
+- App opens the `connectUrl` in the device browser (Spike's hosted OAuth page)
+- User logs in with their Fitbit/Garmin/etc account on Spike's page
+- Spike POSTs data to `https://bonaca.vercel.app/api/v1/webhooks/spike`
+- Backend receives it, validates the Spike signature, writes `MetricReading` rows, updates baselines
+
+**Spike webhook event mapping (implemented):**
+
+| Spike event type | Bonaca MetricType |
+|---|---|
+| `heart_rate.*` | `HEART_RATE` (bpm) |
+| `daily.*` with `steps` in payload | `STEPS` (steps) |
+| `sleep.*` | `SLEEP` (hours) |
+| `workout.*` | `WORKOUTS` (count) |
 
 ---
 
-### 1.3 Razorpay — Payment processing (cards + UPI)
+### 1.3 Razorpay — Payment processing
 
 | | |
 |---|---|
-| **What it does** | Charges users ₹249/month via credit/debit card or UPI, handles recurring billing |
-| **Why Razorpay** | Best-in-class for India UPI + card support, webhook-driven subscription lifecycle, no per-transaction minimum |
-| **Cost** | ~2% per transaction. At ₹249/month: ~₹5/subscriber/month |
-| **Status** | ❌ Not integrated. Only `MockPaymentController` exists on the backend which creates a free trial subscription without charging. `PaymentGatewayScreen` is built visually but calls the mock. |
-| **What needs building** | Razorpay Subscription API wired to `SubscriptionsController`, webhook handler for payment success/failure/expiry → `SubscriptionLifecycleScheduler` already runs at 03:00 daily. Payment Gateway screen wired to Razorpay's checkout SDK. |
-| **iOS caveat** | **Unresolved:** Apple requires iOS digital subscriptions to go through StoreKit/IAP, not a direct card charge. Using Razorpay directly for iOS subscriptions likely violates App Store policy. Options: (a) StoreKit for iOS + Razorpay for Android/web, (b) web-only payment flow that sidesteps the App Store (user subscribes at bonaca.vercel.app, app checks entitlement), (c) accept the risk at small beta scale. This decision must be made before building payment integration. |
-| **Signup** | razorpay.com |
+| **What it does** | Charges users ₹249/month via credit/debit card or UPI, handles recurring billing with webhooks |
+| **Cost** | ~2% per transaction (~₹5/subscriber/month) |
+| **Code status** | ✅ Fully implemented. Backend: `PaymentController` (`POST /payment-link`), `RazorpayWebhookController` (`POST /webhooks/razorpay`), `PaymentService`, `payment_events` table for idempotent event processing. Frontend: `PaymentGatewayScreen` opens Razorpay's hosted payment link in the browser. Mock payment button still present for dev testing. |
+
+**External setup required:**
+
+1. Sign up at [razorpay.com](https://razorpay.com) → complete KYC (requires PAN, bank account, business details — ~2–5 business days for activation).
+2. In the Razorpay Dashboard:
+   - **Test mode first** (safe, no real charges)
+   - Go to **Settings → API Keys** → Generate Key → copy `Key ID` and `Key Secret`
+3. Create a **Plan** (one-time):
+   - Go to **Subscriptions → Plans → Create Plan**
+   - Name: `Bonaca Monthly`
+   - Billing amount: `24900` (in paise — ₹249 × 100)
+   - Billing period: `Monthly`
+   - Copy the **Plan ID** (looks like `plan_XXXXXXXXXXXXXXX`)
+4. Set up **Webhooks**:
+   - Go to **Settings → Webhooks → Add Webhook**
+   - URL: `https://bonaca.vercel.app/api/v1/webhooks/razorpay`
+   - Secret: generate a random string (e.g. `openssl rand -hex 32`), save it
+   - Events to subscribe: ✅ `subscription.activated`, ✅ `subscription.charged`, ✅ `subscription.halted`, ✅ `subscription.cancelled`, ✅ `subscription.completed`
+5. Add to Oracle `~/bonaca/deploy/.env`:
+   ```
+   BONACA_RAZORPAY_KEY_ID=rzp_test_XXXXXXXXXXXXXXX
+   BONACA_RAZORPAY_KEY_SECRET=<your-key-secret>
+   BONACA_RAZORPAY_WEBHOOK_SECRET=<your-webhook-secret>
+   BONACA_RAZORPAY_PLAN_ID=plan_XXXXXXXXXXXXXXX
+   ```
+6. Rebuild and redeploy (new code needed — same as Spike above)
+7. When ready for production: switch to Live mode in Razorpay, generate Live API keys, replace the env vars.
+
+**iOS caveat (open question):** Apple requires iOS digital subscriptions to use StoreKit/IAP. Razorpay direct checkout may violate App Store policy for a published iOS app. For beta testing with friends via TestFlight, this won't be enforced. Resolve before App Store submission.
+
+**How checkout works after setup:**
+- User taps "Pay ₹249/month" in the app
+- App calls `POST /api/v1/accounts/{accountId}/subscription/payment-link`
+- Backend creates a Razorpay subscription, returns `paymentLink`
+- App opens the link in the device browser (Razorpay's hosted checkout)
+- User enters card/UPI details and pays
+- Razorpay POSTs `subscription.activated` webhook to `https://bonaca.vercel.app/api/v1/webhooks/razorpay`
+- Backend verifies signature, calls `SubscriptionService.activate()`, saves `PaymentEvent` (idempotent)
 
 ---
 
-### 1.4 Expo Application Services (EAS) — Mobile builds and OTA
+### 1.4 Expo Application Services (EAS) — Mobile builds
 
 | | |
 |---|---|
-| **What it does** | Compiles native iOS and Android binaries in the cloud (no local Xcode/Android Studio), delivers OTA JavaScript updates without App Store review |
-| **Cost** | Free tier: 15 iOS + 15 Android builds/month — sufficient pre-launch. $19/month Starter once you have real users. |
-| **Status** | ⚠️ EAS CLI configured, but no `eas.json` exists yet — one `eas build` command away from a testable binary. |
-| **What needs building** | Add `eas.json`, run `eas build --platform android --profile preview` for a shareable APK. iOS requires the $99/year Apple Developer account for TestFlight distribution. |
-| **Signup** | expo.dev — free, account exists via existing Expo usage |
+| **What it does** | Compiles iOS and Android native binaries in the cloud, delivers OTA JS updates without App Store review |
+| **Cost** | Free tier: 15 iOS + 15 Android builds/month. $19/month Starter once real users. |
+| **Code status** | ⚠️ `eas.json` not yet created. One command away from a shareable Android APK. |
+
+**Setup (15 minutes):**
+
+1. `npm install -g eas-cli`
+2. `eas login` (use your Expo account)
+3. `eas build:configure` — this generates `eas.json`. Then edit it:
+   ```json
+   {
+     "build": {
+       "preview": {
+         "android": { "buildType": "apk" }
+       },
+       "production": {
+         "android": { "buildType": "app-bundle" },
+         "ios": {}
+       }
+     }
+   }
+   ```
+4. Build Android APK (shareable link, no Play Store needed):
+   ```bash
+   eas build --platform android --profile preview
+   ```
+   Takes ~10–15 minutes. EAS sends you a download link. Share the `.apk` file directly with testers.
+5. For iOS: requires Apple Developer Program ($99/year) + provisioning. Add testers via TestFlight.
 
 ---
 
@@ -64,207 +172,215 @@ Every third-party integration the product needs, with cost and blocking status.
 
 | | |
 |---|---|
-| **What it does** | Required to distribute iOS builds (TestFlight for testing, App Store for production) |
 | **Cost** | $99/year |
-| **Status** | ❌ Not enrolled. Required before any friend/tester can install on iOS. |
-| **What needs building** | Enroll at developer.apple.com, create App ID, provisioning profile, then configure EAS with the certificate. |
+| **Code status** | ❌ Not enrolled |
+
+**Setup:**
+1. Enroll at [developer.apple.com](https://developer.apple.com/programs/enroll/) — requires Apple ID + payment
+2. Apple processes enrollment in ~2–3 business days
+3. After enrollment: `eas build --platform ios --profile preview` → upload to TestFlight
+4. Add testers by email in App Store Connect
 
 ---
 
-### 1.6 Expo Push Notification Service — In-app push alerts
+### 1.6 Expo Push Notification Service
 
 | | |
 |---|---|
-| **What it does** | Delivers push notifications to iOS (via APNs) and Android (via FCM) from a single Expo API — no per-platform credentials needed |
 | **Cost** | Free |
-| **Status** | ❌ Not integrated. `NotificationGenerationService` and `NotificationsRollupScheduler` (04:00 daily) exist on the backend and generate in-database notification records, but nothing pushes to the device. `NotificationsScreen` shows in-app notifications from the DB; the push layer that wakes the user doesn't exist yet. |
-| **What needs building** | Expo push token registration in the app, stored per-user on the backend, called from `NotificationGenerationService` when an insight fires. |
+| **Code status** | ❌ Not integrated. In-app notification records are written to DB but nothing wakes the device. |
+
+**When to build:** After Spike is wired and real insights start generating. Priority is lower than Spike + payments for the first test run.
+
+**What needs implementing:**
+- Register Expo push token on app launch, store per-user via a new `POST /api/v1/members/me/push-token` endpoint
+- `NotificationGenerationService` calls Expo Push API when writing a new `Notification` row
+- ~1 day of work
 
 ---
 
-### 1.7 Sentry — Crash and error reporting
+### 1.7 Sentry + PostHog — Observability and analytics
 
 | | |
 |---|---|
-| **What it does** | Captures and reports crashes, unhandled exceptions, and errors from both the mobile app and backend |
-| **Cost** | Free tier (5,000 errors/month) — sufficient pre-revenue |
-| **Status** | ❌ Not integrated |
-| **What needs building** | `@sentry/react-native` in the Expo app, Sentry Spring Boot SDK in the backend, DSN configured in environment. ~1 hour of work each. |
-| **Signup** | sentry.io |
+| **Cost** | Both free tier |
+| **Code status** | ❌ Not integrated |
+
+Both are ~2–4 hours of setup each. Not blocking the first test run. Add after the core data pipeline is proven.
 
 ---
 
-### 1.8 PostHog — Product analytics
+### 1.8 Oracle Cloud + Vercel — Hosting
 
 | | |
 |---|---|
-| **What it does** | Tracks user funnels, events, and session data to measure PRD success metrics: invite-to-connect activation, weekly engagement, trial→paid conversion |
-| **Cost** | Free tier (1M events/month) — sufficient pre-revenue |
-| **Status** | ❌ Not integrated |
-| **What needs building** | `posthog-react-native` in the Expo app, event calls on key actions (OTP verified, profile complete, wearable connected, metric viewed, invitation sent). ~2–4 hours. |
-| **Signup** | posthog.com |
+| **Cost** | Both free |
+| **Code status** | ✅ Deployed and healthy. Backend at `https://bonaca.vercel.app/api/v1/*` |
 
 ---
 
-### 1.9 Oracle Cloud — Backend hosting
+## Part 2 — What's Built vs What's Left
 
-| | |
+### Backend
+
+#### ✅ Fully built and deployed
+
+| Area | Status |
 |---|---|
-| **What it does** | Runs the Spring Boot backend container + PostgreSQL on an ARM64 VM |
-| **Cost** | Free (Always Free tier: 4 OCPUs, 24 GB RAM ARM64). No cost as long as the account remains active. |
-| **Status** | ✅ Deployed and healthy. Backend running at port 8090, proxied via Vercel at `https://bonaca.vercel.app/api/v1/*`. |
-
----
-
-### 1.10 Vercel — HTTPS proxy
-
-| | |
-|---|---|
-| **What it does** | Provides a TLS-terminated public HTTPS endpoint (`bonaca.vercel.app`) that forwards API calls to the Oracle VM (which has no public TLS of its own) |
-| **Cost** | Free (Hobby plan) |
-| **Status** | ✅ Deployed. Serverless function at `api/[...path].js` injects `X-Backend-Secret` header and forwards to Oracle. |
-
----
-
-## Part 2 — What's Left to Build
-
-### 2.1 Backend
-
-#### ✅ Fully built and live
-
-| Area | What's working |
-|---|---|
-| Auth | Phone+OTP login, JWT access/refresh tokens, OTP rate limiting and lockout, `/me` endpoint |
-| Members | Create account on first login, complete profile (name, DOB, gender), list members, pin/unpin, hide/show, nickname, role (primary/secondary/tertiary — old naming) |
-| Invites | Create invite, accept invite, creates Member + SharingGrant rows |
-| Sharing permissions | GET/PUT sharing grants per member, per scope |
-| Metrics schema | `metric_readings`, `metric_baselines`, `insights` tables in Postgres via Flyway |
-| Metrics read API | `GET /api/v1/members/{id}/metrics` (summary) and `GET /api/v1/members/{id}/metrics/{type}` (detail with range) — returns data from DB |
-| Baselines | `BaselineService` computes rolling 14–21 day baselines, runs via `MetricsRollupScheduler` at 02:00 daily |
-| Insight generation | `InsightGenerationService` evaluates deviations against baselines, writes `Insight` rows |
-| Notifications (in-app) | `NotificationGenerationService` creates notification records from insights, `NotificationsRollupScheduler` at 04:00 daily, `GET /api/v1/notifications` and PATCH mark-read |
-| Subscriptions | `Subscription` model (trial/active/expiring/expired/cancelled), `SubscriptionLifecycleScheduler` at 03:00 daily, `GET /api/v1/subscriptions/me` |
-| Infrastructure | Proxy secret filter, JWT filter, `/health` endpoint, Docker + docker-compose on Oracle, Vercel proxy |
-
-#### ❌ Not built — blocking for first real test
-
-| Area | What's missing | Effort |
-|---|---|---|
-| **Spike API integration** | Nothing calls Spike. `MetricIngestionService.ingest()` exists but has no source. Without this, all metric data is mocked or empty. The entire read path (Home metric summaries, Member Details, Metric Details) shows nothing real. | Large — need to read Spike docs, implement OAuth device-connect, set up webhook or polling loop, map Spike's response schema to `MetricReading` |
-| **Real payment (Razorpay)** | `MockPaymentController` creates free trial subscriptions. No real charge, no webhook, no subscription lifecycle from payment events. | Large — but can be deferred for beta testing with friends using the mock |
-| **Expo push notifications** | In-app notification records exist in DB. Nothing wakes the user's device when an insight fires. | Medium |
-| **MSG91 DLT approval** | OTP code works but SMS won't deliver to Indian numbers until DLT entity + template registered. Currently falls back to logging OTP to Oracle console — workable for testing if you can see the logs. | Waiting on MSG91 (external, ~1 week turnaround) |
-
-#### ⚠️ Built but using wrong data model (realignment needed, not blocking for beta)
-
-| Area | Current state | PRD.pdf target |
-|---|---|---|
-| Role naming | `PRIMARY` = adult child/payer, `SECONDARY` = parent, `TERTIARY` exists | `PRIMARY` = parent/data owner, `SECONDARY` = adult child, no `TERTIARY` |
-| Secondary Member cap | No cap enforced | Max 2 Secondary Members per Primary |
-| Trial duration | 5 days (`MembersService.TRIAL_DAYS`) | 7 days |
-| Sharing scopes | 4 scopes: `vitals`, `activity`, `behaviour`, `location` | 3 scopes: `vitals`, `activity`, `behaviour` (location is context within behaviour) |
-| Permissions default | Role-dependent, not all-on | All-on by default |
-
-These don't break a beta test — they just mean the role labels are inverted. Since you're testing with people you know and will explain the app to, this is fine to defer until post-beta.
-
----
-
-### 2.2 Frontend
-
-#### ✅ Fully built and connected to real backend
-
-| Screen | Status |
-|---|---|
-| Splash | ✅ Built, navigates on auth state |
-| Login (phone number entry) | ✅ Built, calls real OTP request API |
-| OTP verification | ✅ Built, calls real verify API, handles wrong OTP error, resend |
-| Complete Profile | ✅ Built, calls real complete-profile API |
-| Connect Wearable (onboarding) | ✅ Screen built, but no real Spike connection — tapping a wearable doesn't do anything real yet |
-
-#### ✅ Built but data is mocked
-
-| Screen | Status |
-|---|---|
-| Home | ✅ Layout built, member list pulls from real API, but metric summaries (heart rate, steps etc.) are placeholder values |
-| Member Details | ✅ Layout built, member identity pulls from real API, metric cards show mock data |
-| Metric Details | ✅ Layout built with charts, but reads mock data |
-| Notifications | ✅ Layout built, pulls from real notifications API (which will be empty until insights fire from real data) |
-| Profile | ✅ Built, pulls real member data |
-| Profile Details | ✅ Built, shows real profile fields |
-
-#### ⚠️ Built but not wired
-
-| Screen | Status |
-|---|---|
-| Invite Member | ✅ Screen built, calls invite API — but real Spike wearable connection is required for the invited member's data to appear |
-| Edit Permissions | ✅ Screen built, calls sharing grants API — but uses old 4-scope model with batched save (doesn't match PRD's instant-apply 3-scope model) |
-| Hidden Members | ✅ Screen built and wired |
-| Payment Gateway | ✅ Screen built, calls `MockPaymentController` — no real Razorpay charge |
-| Select Wearable Account | ✅ Screen built, no real Spike OAuth flow |
-| Subscriptions | ✅ Screen built, reads real subscription state from backend |
+| Auth (phone+OTP, JWT, rate limiting) | ✅ Live on Oracle |
+| Members (profile, pin/hide, nickname) | ✅ Live |
+| Invites + sharing grants | ✅ Live |
+| Metrics schema + baselines + insights (logic layer) | ✅ Live — awaiting real data from Spike |
+| Notifications (in-app records) | ✅ Live — awaiting real insights |
+| Subscriptions (trial/active/expiring/expired lifecycle) | ✅ Live |
+| Mock payment endpoint (dev only) | ✅ Live |
+| Spike API integration | ✅ Code written, needs env vars + redeploy |
+| Razorpay payment integration | ✅ Code written, needs env vars + redeploy |
+| Proxy secret filter + health endpoint | ✅ Live |
 
 #### ❌ Not built
 
-| Screen / Feature | Notes |
+| Area | Notes |
 |---|---|
-| Spike OAuth device-connect flow | The "Connect Wearable" screen needs to open a Spike OAuth URL in a browser, handle the callback, and store the connection. Not yet built anywhere. |
-| Real payment checkout | Razorpay SDK checkout sheet in-app, or web-based checkout redirect. Not built. |
-| Push notification permission + token registration | App needs to request push permission at login and send Expo push token to backend. Not built. |
-| Metric detail 24h/7d/30d range tabs | Currently built as 1D/7D/4W/1Y. PRD says 24h/7d/30d. Minor rename + data range fix. |
+| Expo push notifications | Backend webhook → device push. ~1 day. |
+| Push token storage endpoint | `POST /api/v1/members/me/push-token`. ~2 hours. |
+| Sentry / PostHog | ~2–4 hours each. |
+
+#### ⚠️ Built with stale data model (not blocking beta)
+
+| Issue | Impact |
+|---|---|
+| Role naming inverted (Primary = adult child in code, should be parent) | Labels show wrong names; functionality works |
+| No 2-Secondary-Member cap in `InviteService` | Can create more than 2 invites |
+| Trial is 7 days in `SubscriptionService.TRIAL_DAYS` | ✅ Already correct |
+| Permissions: 4 scopes (incl. `location`) + batched save + role-dependent defaults | Doesn't match PRD §11; functional but UX differs from design |
 
 ---
 
-## Part 3 — What You Need for the First Test Run
+### Frontend
 
-**The minimum viable path to give this app to a friend and have them experience it:**
+#### ✅ Fully built + connected to real backend
 
-### If your friend has Android
+| Screen | Status |
+|---|---|
+| Splash → Login → OTP → Complete Profile | ✅ Wired to real auth API |
+| Home (member list) | ✅ Member data from real API; metric values mocked |
+| Profile + Profile Details | ✅ Real data |
+| Notifications list | ✅ Pulls from real DB (empty until Spike sends data) |
+| Subscriptions screen | ✅ Real subscription state |
 
-1. **Register for DLT** (do this now — 1 week lead time). Until approved, you can test with a phone number you control by watching the Oracle logs for the OTP: `ssh -i ~/.ssh/oracle_vm.key ubuntu@80.225.223.142 "docker logs -f bonaca-backend 2>&1 | grep dev-otp"`
+#### ✅ Newly wired (this session)
 
-2. **Build an APK**:
-   ```bash
-   npx eas build --platform android --profile preview
-   ```
-   Requires `eas.json` (takes ~15 minutes to configure + build). Produces a shareable `.apk` link.
+| Screen | Status |
+|---|---|
+| Connect Wearable (onboarding) | ✅ Calls Spike via API, opens connect URL in browser |
+| Select Wearable Account | ✅ Calls Spike via API, shows connection status |
+| Payment Gateway | ✅ Opens real Razorpay payment link; mock button kept for dev |
 
-3. **What will work**: Splash → Login → OTP (you relay the code from logs) → Complete Profile → Home (empty, no wearable data) → Profile → Notifications (empty).
+#### ⚠️ Screens built but data still mocked
 
-4. **What won't work**: Wearable data, real SMS OTP, payment.
+| Screen | Why |
+|---|---|
+| Member Details — metric cards | Waiting for Spike data to flow into DB |
+| Metric Details — charts | Same; will auto-populate once Spike webhooks deliver readings |
 
-### If your friend has iOS
+#### ❌ Not built
 
-Add step 0: Enroll in the Apple Developer Program ($99), then use EAS to add them as a TestFlight tester. Takes a few days for Apple to process.
+| Feature | Notes |
+|---|---|
+| Push notification permission + token registration | On app launch, request permission and POST token to backend |
+| Sentry error boundary | Wrap root layout |
+| PostHog event tracking | Key funnel events |
 
-### Spike workaround for the test
+---
 
-To show real metric data during a test without Spike integration, you can seed the database directly:
+## Part 3 — First Test Run Path
 
+### Minimum viable path (Android, with a friend)
+
+**Step 1 — DLT registration** (start today, ~1 week):
+- While waiting, you can relay OTPs manually: `ssh -i ~/.ssh/oracle_vm.key ubuntu@80.225.223.142 "docker logs -f bonaca-backend 2>&1 | grep dev-otp"`
+
+**Step 2 — Build APK** (once `eas.json` is added):
+```bash
+eas build --platform android --profile preview
+```
+Produces a shareable download link. Your friend installs the `.apk` directly.
+
+**Step 3 — Configure env vars on Oracle** (once API keys are ready):
+
+Edit `~/bonaca/deploy/.env` on Oracle, then:
+```bash
+cd ~/bonaca/deploy && docker compose up -d --force-recreate backend
+```
+No rebuild needed — Spring picks up env vars at startup.
+
+**What will work on the test run:**
+- Full auth flow (OTP via logging until DLT approved)
+- Profile, home, notifications screens
+- Wearable connect button → opens Spike page in browser
+- Payment button → opens Razorpay checkout in browser
+- Metric screens (empty until wearable connects and data flows)
+
+**Step 4 — Seed metric data for the demo** (optional, shows the full UI):
 ```sql
--- On Oracle, in the bonaca Postgres DB:
-INSERT INTO metric_readings (member_id, metric_type, value, unit, recorded_at, source)
-VALUES ('<member-uuid>', 'HEART_RATE', 72, 'bpm', NOW(), 'manual');
+-- SSH to Oracle, then:
+docker exec -it infrastructure-postgres-1 psql -U bonaca bonaca
+
+-- Replace <member-uuid> with your member ID from the members table:
+INSERT INTO metric_readings (member_id, metric_type, metric_value, unit, recorded_at, source_device_id)
+VALUES
+  ('<member-uuid>', 'HEART_RATE', 72, 'bpm', NOW(), 'seed'),
+  ('<member-uuid>', 'STEPS', 8400, 'steps', NOW(), 'seed'),
+  ('<member-uuid>', 'SLEEP', 7.2, 'hours', NOW(), 'seed');
+```
+The baseline + insight schedulers run at 02:00/03:00/04:00 daily, or trigger manually via `curl -X POST http://localhost:8090/api/v1/admin/metrics/rollup` (if you add that endpoint later).
+
+### iOS path
+
+Same steps, but add before Step 2: enroll in Apple Developer Program ($99/year), configure EAS for iOS, build and upload to TestFlight, invite tester by email.
+
+---
+
+## Quick Reference — Oracle `.env` keys
+
+```bash
+# Required — already set
+BONACA_DATABASE_URL=jdbc:postgresql://postgres:5432/bonaca
+BONACA_DATABASE_USER=bonaca
+BONACA_DATABASE_PASSWORD=<set>
+JWT_SECRET=<set>
+BACKEND_SECRET=<set>
+
+# SMS — set after DLT approval
+BONACA_MSG91_AUTH_KEY=
+BONACA_MSG91_TEMPLATE_ID=
+
+# Wearable sync — set after Spike access granted
+BONACA_SPIKE_API_KEY=
+BONACA_SPIKE_WEBHOOK_SECRET=
+
+# Payments — set after Razorpay KYC + plan creation
+BONACA_RAZORPAY_KEY_ID=
+BONACA_RAZORPAY_KEY_SECRET=
+BONACA_RAZORPAY_WEBHOOK_SECRET=
+BONACA_RAZORPAY_PLAN_ID=
 ```
 
-This lets you demo the metrics read path without waiting for Spike.
-
 ---
 
-## Summary Table
+## Status Summary
 
 | | Status |
 |---|---|
-| Auth (OTP login) | ✅ Working (SMS pending DLT) |
-| Profile | ✅ Working |
-| Members + Invites + Permissions | ✅ Working (old role naming) |
-| Metric data pipeline | ❌ No data source (Spike not integrated) |
-| Insights + Notifications (in-app) | ⚠️ Logic built, no data flowing |
+| Auth (OTP login) | ✅ Working (SMS pending DLT, OTP logged to console) |
+| Profile, Members, Invites | ✅ Working |
+| Spike wearable integration (code) | ✅ Written, needs API key + redeploy |
+| Razorpay payment integration (code) | ✅ Written, needs API keys + redeploy |
+| Metric data pipeline | ⏳ Waiting for Spike API key |
+| Insights + in-app notifications | ⏳ Waiting for Spike data |
 | Push notifications | ❌ Not built |
-| Payments | ❌ Mock only |
 | Android build (APK) | ⚠️ `eas.json` needed, then one command |
 | iOS build (TestFlight) | ❌ Needs $99 Apple Developer account |
-| MSG91 real SMS | ❌ Waiting on DLT registration |
-| Spike wearable sync | ❌ Not integrated |
-| Razorpay billing | ❌ Not integrated |
-| Sentry error reporting | ❌ Not integrated |
-| PostHog analytics | ❌ Not integrated |
+| MSG91 real SMS | ⏳ Waiting on DLT registration |
+| Sentry / PostHog | ❌ Not integrated |

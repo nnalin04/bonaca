@@ -13,7 +13,7 @@ export class ApiError extends Error {
 
 async function request<TResponse>(
   path: string,
-  options: { method: 'GET' | 'POST' | 'PATCH'; body?: unknown; accessToken?: string }
+  options: { method: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown; accessToken?: string }
 ): Promise<TResponse | undefined> {
   if (!BASE_URL) {
     throw new Error('EXPO_PUBLIC_API_BASE_URL is not set — see .env');
@@ -48,4 +48,6 @@ export const apiClient = {
   get: <TResponse>(path: string, accessToken?: string) => request<TResponse>(path, { method: 'GET', accessToken }),
   patch: <TResponse>(path: string, body?: unknown, accessToken?: string) =>
     request<TResponse>(path, { method: 'PATCH', body, accessToken }),
+  delete: <TResponse>(path: string, accessToken?: string) =>
+    request<TResponse>(path, { method: 'DELETE', accessToken }),
 };
