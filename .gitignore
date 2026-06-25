@@ -34,8 +34,16 @@ yarn-error.*
 .env*
 !.env.example
 
-# Claude Code local/personal settings
+# Claude Code local/personal settings and skills
 .claude/settings.local.json
+.claude/skills/
+
+# Agent and codex tooling (local only)
+.agents/
+.codex/
+
+# Development screenshots
+*.png
 
 # typescript
 *.tsbuildinfo
