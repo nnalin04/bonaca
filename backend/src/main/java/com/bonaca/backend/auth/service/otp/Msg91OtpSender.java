@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
  * LoggingOtpSender takes over when it is absent (local/dev). Requires a DLT-approved
  * template — see docs/TECHNICAL_REQUIREMENTS.md §4 for registration steps.
  */
+@Primary
 @Component
 @EnableConfigurationProperties(Msg91Properties.class)
 @ConditionalOnProperty(name = "bonaca.msg91.auth-key")

@@ -10,12 +10,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
 /**
- * Contract from LoggingOtpSender's class Javadoc: fallback when no real OtpSender bean is
- * present (i.e. MSG91 auth-key not configured). Must never throw so OTP requests keep working
- * in dev/test without real SMS delivery.
+ * Contract: LoggingOtpSender is always present; Msg91OtpSender is @Primary and shadows it
+ * when auth-key is configured. Must never throw — OTP requests must work without real SMS.
  */
 class LoggingOtpSenderTest {
 
@@ -52,10 +51,7 @@ class LoggingOtpSenderTest {
     }
 
     @Test
-    void isActivatedAsConditionalFallbackWhenNoOtpSenderBeanPresent() {
-        ConditionalOnMissingBean conditional = LoggingOtpSender.class.getAnnotation(ConditionalOnMissingBean.class);
-
-        assertThat(conditional).isNotNull();
-        assertThat(conditional.value()).contains(OtpSender.class);
+    void isAnUnconditionalComponentSoItIsAlwaysAvailableAsFallback() {
+        assertThat(LoggingOtpSender.class.getAnnotation(Component.class)).isNotNull();
     }
 }
