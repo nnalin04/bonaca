@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: ${BONACA_DATABASE_URL}
+    username: ${BONACA_DATABASE_USER}
+    password: ${BONACA_DATABASE_PASSWORD}
+
+bonaca:
+  jwt:
+    secret: ${JWT_SECRET}
+  proxy-security:
+    enabled: true
+    secret: ${BACKEND_SECRET}
+
+logging:
+  level:
+    com.bonaca.backend.auth.service.otp: INFO

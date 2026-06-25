@@ -17,6 +17,9 @@ bonaca:
     # Dev-only default secret, generated locally — never use this value outside local dev.
     # Override with the JWT_SECRET env var in any non-local environment.
     secret: ${JWT_SECRET:s98slO6+8H7jnfAEqBtcK2/mHLRsCR+LxQYTL+6nRLsTJxNIhk7drE6r5k6u/0NhM25g5juzLTj0r+0fjJJZJQ==}
+  proxy-security:
+    enabled: false
+    secret: ""
     access-token-ttl-minutes: 15
     refresh-token-ttl-days: 30
   otp:

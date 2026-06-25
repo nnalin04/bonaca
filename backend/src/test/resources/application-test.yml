@@ -29,3 +29,6 @@ bonaca:
     ttl-minutes: 5
     max-verify-attempts: 5
     max-requests-per-hour: 5
+  proxy-security:
+    enabled: false
+    secret: ""
