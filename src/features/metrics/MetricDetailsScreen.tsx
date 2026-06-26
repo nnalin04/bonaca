@@ -61,8 +61,15 @@ export function MetricDetailsScreen({
 
   const config = metricDisplayConfig[metricType];
 
-  const dateLabel =
-    dateOffset === 0 ? 'Wednesday, 14 Jan (Today)' : `Tuesday, 13 Jan`;
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() - dateOffset);
+  const isToday = dateOffset === 0;
+  const formattedDate = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  }).format(targetDate);
+  const dateLabel = isToday ? `${formattedDate} (Today)` : formattedDate;
 
   return (
     <View style={styles.screen}>

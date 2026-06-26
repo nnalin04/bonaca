@@ -1,6 +1,7 @@
 import { IconBell, IconUserCircle } from '@tabler/icons-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
@@ -19,13 +20,14 @@ export function HomeHeader({
   onPressNotifications,
   onPressProfile,
 }: HomeHeaderProps) {
+  const insets = useSafeAreaInsets();
   return (
     <LinearGradient
       colors={[Colors.headerGradientStart, Colors.headerGradientEnd]}
       locations={[0, 0.95]}
       start={{ x: 0.97, y: -0.43 }}
       end={{ x: 0.21, y: 1.21 }}
-      style={styles.header}>
+      style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
       <View style={styles.greetingBlock}>
         <Text style={styles.greeting}>Hello {greetingName}!</Text>
         <Text style={styles.status}>{statusMessage}</Text>
@@ -61,11 +63,9 @@ export function HomeHeader({
 
 const styles = StyleSheet.create({
   header: {
-    height: 125,
     borderBottomLeftRadius: Radii.headerCorner,
     borderBottomRightRadius: Radii.headerCorner,
     paddingHorizontal: 16,
-    paddingTop: 62,
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',

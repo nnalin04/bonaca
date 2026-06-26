@@ -24,23 +24,13 @@ export interface Member {
   weightKg?: number;
 }
 
-export type WearableProvider =
-  | 'apple-health'
-  | 'health-connect'
-  | 'fitbit'
-  | 'garmin'
-  | 'samsung-health'
-  | 'oura';
-export type WearableConnectionStatus =
-  | 'connected'
-  | 'disconnected'
-  | 'needs-reauth';
+export type WearableProvider = 'fitbit' | 'garmin' | 'samsung-health' | 'oura';
 
 export interface WearableConnection {
   id: string;
   memberId: string;
   provider: WearableProvider;
-  status: WearableConnectionStatus;
+  status: 'PENDING' | 'CONNECTED' | 'DISCONNECTED';
   lastSyncedAt: string | null;
 }
 
@@ -118,7 +108,7 @@ export interface Subscription {
 // Payment methods shown on the Payment Gateway screen (Figma section "Connecting a Wearable").
 // UI-only for now — no processor is wired up (RevenueCat/StoreKit/Razorpay per
 // docs/TECHNICAL_REQUIREMENTS.md are decided but not yet implemented).
-export type PaymentMethodType = 'upi' | 'paypal' | 'amex' | 'mastercard' | 'apple-pay';
+export type PaymentMethodType = 'upi' | 'card';
 
 export interface PaymentMethod {
   id: string;

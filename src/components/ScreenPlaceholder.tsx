@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors } from '@/theme/tokens';
+import { Colors, Fonts } from '@/theme/tokens';
 
 interface ScreenPlaceholderProps {
   title: string;
@@ -26,11 +26,13 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
+    fontFamily: Fonts.family,
     fontSize: 20,
     fontWeight: '600',
     color: Colors.textPrimary,
   },
   section: {
+    fontFamily: Fonts.family,
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',

@@ -1,6 +1,8 @@
+import { IconUserPlus } from '@tabler/icons-react-native';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,7 +10,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { MemberSyncCard } from '@/features/home/components/MemberSyncCard';
 import { AddMemberButton } from '@/features/members/components/AddMemberButton';
 import { MemberTrialBanner } from '@/features/members/components/MemberTrialBanner';
@@ -22,13 +23,16 @@ export function MemberListScreen() {
 
   return (
     <View style={styles.screen}>
-      <HomeHeader
-        greetingName={self?.name.split(' ')[0] ?? ''}
-        statusMessage="Manage your family members"
-        unreadNotificationCount={0}
-        onPressNotifications={() => router.push('/notifications')}
-        onPressProfile={() => router.push('/profile')}
-      />
+      <View style={[styles.pageHeader, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.pageTitle}>Family Members</Text>
+        <Pressable
+          hitSlop={8}
+          onPress={() => router.push('/members/invite')}
+          accessibilityRole="button"
+          accessibilityLabel="Invite a member">
+          <IconUserPlus size={24} color={Colors.accent} strokeWidth={1.75} />
+        </Pressable>
+      </View>
 
       <ScrollView
         contentContainerStyle={[
@@ -88,6 +92,23 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.cardBorder,
+  },
+  pageTitle: {
+    fontFamily: Fonts.family,
+    fontWeight: '600',
+    fontSize: 20,
+    lineHeight: 28,
+    color: Colors.textPrimary,
   },
   content: {
     paddingHorizontal: 16,

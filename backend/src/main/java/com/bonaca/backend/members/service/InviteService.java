@@ -1,7 +1,9 @@
 package com.bonaca.backend.members.service;
 
 import com.bonaca.backend.members.dto.InviteResponse;
+import com.bonaca.backend.members.exception.ForbiddenMemberAccessException;
 import com.bonaca.backend.members.exception.MemberLimitExceededException;
+import com.bonaca.backend.members.exception.MemberNotFoundException;
 import com.bonaca.backend.members.model.Invite;
 import com.bonaca.backend.members.model.InviteStatus;
 import com.bonaca.backend.members.model.Member;
@@ -54,6 +56,21 @@ public class InviteService {
 
         Invite invite = inviteRepository.save(new Invite(me.getAccountId(), phoneNumber, MemberRole.SECONDARY));
         return InviteResponse.from(invite);
+    }
+
+    @Transactional
+    public void cancelInvite(UUID inviteId, UUID callerId) {
+        Invite invite = inviteRepository.findById(inviteId)
+                .orElseThrow(() -> new MemberNotFoundException("Invite not found: " + inviteId));
+        Member caller = permissions.requireMemberForUser(callerId);
+        if (!invite.getInviterAccountId().equals(caller.getAccountId()) || caller.getRole() != MemberRole.PRIMARY) {
+            throw new ForbiddenMemberAccessException("Only primary members can cancel invites");
+        }
+        if (invite.getStatus() != InviteStatus.PENDING) {
+            throw new MemberLimitExceededException("Cannot cancel a non-pending invite");
+        }
+        invite.cancel();
+        inviteRepository.save(invite);
     }
 
     public List<InviteResponse> listForCurrentAccount(UUID userId) {

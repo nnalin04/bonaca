@@ -81,4 +81,8 @@ public class Invite {
         this.status = InviteStatus.ACCEPTED;
         this.acceptedMemberId = memberId;
     }
+
+    public void cancel() {
+        this.status = InviteStatus.CANCELLED;
+    }
 }

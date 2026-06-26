@@ -16,4 +16,6 @@ public interface SharingGrantRepository extends JpaRepository<SharingGrant, UUID
 
     boolean existsByGranterMemberIdAndGranteeMemberIdAndScopeAndVisibleTrue(
             UUID granterMemberId, UUID granteeMemberId, SharingScope scope);
+
+    void deleteByGranterMemberIdOrGranteeMemberId(UUID granterId, UUID granteeId);
 }

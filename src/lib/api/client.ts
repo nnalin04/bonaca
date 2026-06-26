@@ -24,11 +24,20 @@ async function request<TResponse>(
     headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method: options.method,
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      method: options.method,
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const errorBody = (await response.json().catch(() => null)) as ApiErrorResponse | null;

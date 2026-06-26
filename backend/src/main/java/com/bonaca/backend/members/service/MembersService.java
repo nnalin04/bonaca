@@ -138,6 +138,24 @@ public class MembersService {
         }
     }
 
+    @Transactional
+    public void removeMember(UUID targetMemberId, UUID callerId) {
+        Member caller = permissions.requireMemberForUser(callerId);
+        Member target = memberRepository.findById(targetMemberId)
+                .orElseThrow(() -> new MemberNotFoundException("Member not found: " + targetMemberId));
+        if (!target.getAccountId().equals(caller.getAccountId())) {
+            throw new ForbiddenMemberAccessException("Cannot remove a member from another account");
+        }
+        if (caller.getRole() != MemberRole.PRIMARY) {
+            throw new ForbiddenMemberAccessException("Only primary members can remove members");
+        }
+        if (target.getRole() == MemberRole.PRIMARY) {
+            throw new ForbiddenMemberAccessException("Cannot remove the primary member");
+        }
+        sharingGrantRepository.deleteByGranterMemberIdOrGranteeMemberId(targetMemberId, targetMemberId);
+        memberRepository.delete(target);
+    }
+
     public List<MemberResponse> listVisibleMembers(UUID userId) {
         Member me = permissions.requireMemberForUser(userId);
 

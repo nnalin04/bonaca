@@ -1,5 +1,5 @@
 import Svg, { Line, Rect } from 'react-native-svg';
-import { StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
@@ -11,7 +11,7 @@ interface BarChartCardProps {
   xAxisLabels: string[];
 }
 
-const CHART_WIDTH = 326;
+const CHART_WIDTH = Dimensions.get('window').width - 64;
 const CHART_HEIGHT = 280;
 const BAR_WIDTH = 6;
 const BAR_GAP = 6;

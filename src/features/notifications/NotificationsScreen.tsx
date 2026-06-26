@@ -1,5 +1,6 @@
 import { useRouter, type Href } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useMembers } from '@/features/members';
@@ -15,13 +16,26 @@ export function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { self } = useMembers();
-  const { notifications, isLoading, errorMessage, markRead } = useNotifications(self?.id);
+  const { notifications, isLoading, errorMessage, markRead, refresh } = useNotifications(self?.id);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setIsRefreshing(false);
+  };
 
   const handlePress = (notification: NotificationResponse) => {
     if (!notification.read) {
       void markRead(notification.id);
     }
-    router.push(notification.deepLinkTarget as Href);
+    try {
+      if (notification.deepLinkTarget) {
+        router.push(notification.deepLinkTarget as Href);
+      }
+    } catch {
+      console.warn('Invalid deep link target:', notification.deepLinkTarget);
+    }
   };
 
   return (
@@ -30,7 +44,8 @@ export function NotificationsScreen() {
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}>
         {isLoading && notifications.length === 0 ? (
           <ActivityIndicator style={styles.loading} />
         ) : errorMessage ? (

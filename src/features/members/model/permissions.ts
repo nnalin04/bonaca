@@ -24,5 +24,5 @@ export const sharingScopeMetrics: Record<SharingScope, string[]> = {
     'VO2 max',
   ],
   activity: ['Steps', 'Calories', 'Workouts', 'Training Load'],
-  behaviour: [],
+  behaviour: ['Routine Adherence', 'Screen Time', 'Outside Time'],
 };

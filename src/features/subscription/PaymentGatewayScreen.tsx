@@ -132,21 +132,23 @@ export function PaymentGatewayScreen({ accountId }: PaymentGatewayScreenProps) {
             </Pressable>
           )}
 
-          {/* Dev-only mock path (shown when Razorpay not configured yet) */}
-          <Pressable
-            style={styles.mockButton}
-            onPress={handleMockPay}
-            disabled={isPaying || isLoading}
-            accessibilityRole="button"
-            accessibilityLabel="Activate mock subscription for development">
-            {isPaying ? (
-              <ActivityIndicator color={Colors.accent} />
-            ) : (
-              <Text style={styles.mockText}>
-                {isActive ? 'View subscription' : '[Dev] Activate without payment'}
-              </Text>
-            )}
-          </Pressable>
+          {/* Dev-only mock path — hidden in production builds */}
+          {__DEV__ && (
+            <Pressable
+              style={styles.mockButton}
+              onPress={handleMockPay}
+              disabled={isPaying || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Activate mock subscription for development">
+              {isPaying ? (
+                <ActivityIndicator color={Colors.accent} />
+              ) : (
+                <Text style={styles.mockText}>
+                  {isActive ? 'View subscription' : '[Dev] Activate without payment'}
+                </Text>
+              )}
+            </Pressable>
+          )}
         </View>
       </View>
     </View>
