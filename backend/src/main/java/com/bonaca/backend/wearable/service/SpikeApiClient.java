@@ -1,6 +1,8 @@
 package com.bonaca.backend.wearable.service;
 
 import com.bonaca.backend.wearable.config.SpikeProperties;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,9 +25,11 @@ public class SpikeApiClient {
 
     private final SpikeProperties properties;
     private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
-    public SpikeApiClient(SpikeProperties properties) {
+    public SpikeApiClient(SpikeProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
+        this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -33,7 +37,8 @@ public class SpikeApiClient {
 
     public CreateUserResult createUser(UUID memberId) throws IOException, InterruptedException {
         requireConfigured();
-        String body = "{\"external_id\":\"" + memberId + "\"}";
+        String body = "{\"external_id\":\"" + memberId
+                + "\",\"redirect_url\":\"bonaca://wearable/connected\"}";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(properties.baseUrl() + "/team/users"))
                 .header("Authorization", "Bearer " + properties.apiKey())
@@ -69,22 +74,13 @@ public class SpikeApiClient {
         }
     }
 
-    private static CreateUserResult parseCreateUserResult(String json) {
-        String userId = extractJsonString(json, "user_id");
-        String connectUrl = extractJsonString(json, "connect_url");
+    private CreateUserResult parseCreateUserResult(String json) throws IOException {
+        JsonNode root = objectMapper.readTree(json);
+        String userId = root.path("user_id").asText(null);
+        String connectUrl = root.path("connect_url").asText(null);
         if (userId == null || connectUrl == null) {
             throw new IllegalStateException("Spike response missing user_id or connect_url: " + json);
         }
         return new CreateUserResult(userId, connectUrl);
-    }
-
-    static String extractJsonString(String json, String key) {
-        String search = "\"" + key + "\":\"";
-        int start = json.indexOf(search);
-        if (start == -1) return null;
-        start += search.length();
-        int end = json.indexOf('"', start);
-        if (end == -1) return null;
-        return json.substring(start, end);
     }
 }

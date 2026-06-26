@@ -53,13 +53,21 @@ public class WearableService {
         return connectionRepository.findByMemberId(memberId);
     }
 
+    // WEARABLE-3: Delete DB row first, then attempt Spike API — user can't be stuck with
+    // an undeleteable connection if the Spike call fails.
     @Transactional
-    public void disconnect(UUID memberId) throws IOException, InterruptedException {
+    public void disconnect(UUID memberId) {
         WearableConnection connection = connectionRepository
                 .findByMemberId(memberId)
                 .orElseThrow(() -> new MemberNotFoundException("No wearable connection for member: " + memberId));
-        spikeApiClient.deleteUser(connection.getSpikeUserId());
         connectionRepository.delete(connection);
+        connectionRepository.flush();
+        try {
+            spikeApiClient.deleteUser(connection.getSpikeUserId());
+        } catch (Exception e) {
+            log.warn("Spike deleteUser failed for spikeUserId {} (DB row already deleted): {}",
+                    connection.getSpikeUserId(), e.getMessage());
+        }
     }
 
     @Transactional
@@ -71,9 +79,15 @@ public class WearableService {
         }
         WearableConnection connection = connectionOpt.get();
         connection.setLastSyncedAt(Instant.now());
+
+        // WEARABLE-1: Handle both connect and disconnect events
         if ("CONNECTED".equals(eventType) || "connected".equals(eventType)) {
             connection.setStatus("CONNECTED");
             connection.setConnectedAt(Instant.now());
+        } else if ("DISCONNECTED".equals(eventType) || "disconnected".equals(eventType)
+                || "revoked".equals(eventType) || "expired".equals(eventType)) {
+            connection.setStatus("DISCONNECTED");
+            connection.setConnectedAt(null);
         }
         connectionRepository.save(connection);
 
@@ -92,8 +106,13 @@ public class WearableService {
                 log.debug("No metric mapping for Spike event type: {}", eventType);
                 return;
             }
+            // WEARABLE-2: Null extractValue means missing/unparseable field — skip rather than store 0.0
+            Double value = extractValue(payload);
+            if (value == null) {
+                log.warn("Spike event {} for member {} has missing or unparseable value — skipping ingestion", eventType, memberId);
+                return;
+            }
             String unit = unitForMetric(metricType);
-            double value = extractValue(payload);
             metricIngestionService.recordReading(memberId, metricType, value, unit, Instant.now(), spikeUserId);
             log.debug("Ingested {} = {} {} for member {} from Spike", metricType, value, unit, memberId);
         } catch (Exception e) {
@@ -123,17 +142,22 @@ public class WearableService {
         };
     }
 
-    private static double extractValue(String payload) {
+    // WEARABLE-2: Returns null when value is missing or cannot be parsed, instead of 0.0.
+    private static Double extractValue(String payload) {
         String search = "\"value\":";
         int idx = payload.indexOf(search);
-        if (idx == -1) return 0.0;
+        if (idx == -1) return null;
         int start = idx + search.length();
         int end = start;
         while (end < payload.length() && (Character.isDigit(payload.charAt(end))
                 || payload.charAt(end) == '.' || payload.charAt(end) == '-')) {
             end++;
         }
-        if (start == end) return 0.0;
-        return Double.parseDouble(payload.substring(start, end));
+        if (start == end) return null;
+        try {
+            return Double.parseDouble(payload.substring(start, end));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -1,7 +1,10 @@
 package com.bonaca.backend.wearable.controller;
 
+import com.bonaca.backend.common.HmacUtil;
 import com.bonaca.backend.wearable.config.SpikeProperties;
 import com.bonaca.backend.wearable.service.WearableService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -25,10 +28,15 @@ public class SpikeWebhookController {
 
     private final WearableService wearableService;
     private final SpikeProperties properties;
+    private final ObjectMapper objectMapper;
 
-    public SpikeWebhookController(WearableService wearableService, SpikeProperties properties) {
+    public SpikeWebhookController(
+            WearableService wearableService,
+            SpikeProperties properties,
+            ObjectMapper objectMapper) {
         this.wearableService = wearableService;
         this.properties = properties;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping("/spike")
@@ -41,10 +49,12 @@ public class SpikeWebhookController {
                 log.warn("Spike webhook signature mismatch — ignoring");
                 return ResponseEntity.status(401).build();
             }
-            String spikeUserId = extractField(rawBody, "user_id");
-            if (spikeUserId == null) spikeUserId = extractField(rawBody, "spike_user_id");
-            String eventType = extractField(rawBody, "type");
-            if (eventType == null) eventType = extractField(rawBody, "event_type");
+
+            JsonNode root = objectMapper.readTree(rawBody);
+            String spikeUserId = root.path("user_id").asText(null);
+            if (spikeUserId == null) spikeUserId = root.path("spike_user_id").asText(null);
+            String eventType = root.path("type").asText(null);
+            if (eventType == null) eventType = root.path("event_type").asText(null);
 
             if (spikeUserId != null && eventType != null) {
                 wearableService.processWebhookEvent(spikeUserId, eventType, rawBody);
@@ -67,31 +77,12 @@ public class SpikeWebhookController {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             byte[] computed = mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
-            byte[] supplied = hexToBytes(signature.startsWith("sha256=")
+            byte[] supplied = HmacUtil.hexToBytes(signature.startsWith("sha256=")
                     ? signature.substring(7) : signature);
             return MessageDigest.isEqual(computed, supplied);
         } catch (Exception e) {
             log.error("Spike signature validation error: {}", e.getMessage());
             return false;
         }
-    }
-
-    private static byte[] hexToBytes(String hex) {
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
-    }
-
-    private static String extractField(String json, String key) {
-        String search = "\"" + key + "\":\"";
-        int start = json.indexOf(search);
-        if (start == -1) return null;
-        start += search.length();
-        int end = json.indexOf('"', start);
-        return end == -1 ? null : json.substring(start, end);
     }
 }

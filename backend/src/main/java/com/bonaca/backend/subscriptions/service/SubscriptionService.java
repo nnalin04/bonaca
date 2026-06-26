@@ -64,6 +64,14 @@ public class SubscriptionService {
         return subscriptionRepository.save(subscription);
     }
 
+    @Transactional
+    public Subscription recordRenewal(UUID accountId, Instant nextBillingAt) {
+        Subscription subscription = requireSubscription(accountId);
+        subscription.markActive(Instant.now());
+        subscription.setNextBillingAt(nextBillingAt);
+        return subscriptionRepository.save(subscription);
+    }
+
     /**
      * PRD §12: a lapsed subscription pauses wearable sync and sharing, but TRIAL/ACTIVE/EXPIRING
      * all still count as active — EXPIRING is a failed-renewal grace period, not a denial yet

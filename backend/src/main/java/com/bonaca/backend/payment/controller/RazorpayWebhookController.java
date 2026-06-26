@@ -1,8 +1,11 @@
 package com.bonaca.backend.payment.controller;
 
+import com.bonaca.backend.common.HmacUtil;
 import com.bonaca.backend.payment.config.RazorpayProperties;
 import com.bonaca.backend.payment.service.PaymentService;
 import com.bonaca.backend.subscriptions.repository.SubscriptionRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.UUID;
@@ -28,14 +31,17 @@ public class RazorpayWebhookController {
     private final PaymentService paymentService;
     private final RazorpayProperties properties;
     private final SubscriptionRepository subscriptionRepository;
+    private final ObjectMapper objectMapper;
 
     public RazorpayWebhookController(
             PaymentService paymentService,
             RazorpayProperties properties,
-            SubscriptionRepository subscriptionRepository) {
+            SubscriptionRepository subscriptionRepository,
+            ObjectMapper objectMapper) {
         this.paymentService = paymentService;
         this.properties = properties;
         this.subscriptionRepository = subscriptionRepository;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping("/razorpay")
@@ -48,20 +54,35 @@ public class RazorpayWebhookController {
                 log.warn("Razorpay webhook signature mismatch");
                 return ResponseEntity.status(401).build();
             }
-            String eventType = extractJsonString(rawBody, "event");
-            String subscriptionId = extractSubscriptionId(rawBody);
-            String paymentId = extractPaymentId(rawBody);
+
+            JsonNode root = objectMapper.readTree(rawBody);
+            String eventType = root.path("event").asText(null);
+
+            // Razorpay nests subscription under payload.subscription.entity
+            JsonNode subEntity = root.path("payload").path("subscription").path("entity");
+            String subscriptionId = subEntity.path("id").asText(null);
+            if (subscriptionId != null && !subscriptionId.startsWith("sub_")) {
+                subscriptionId = null;
+            }
+
+            // Razorpay nests payment under payload.payment.entity
+            JsonNode payEntity = root.path("payload").path("payment").path("entity");
+            String paymentId = payEntity.path("id").asText(null);
+            if (paymentId != null && !paymentId.startsWith("pay_")) {
+                paymentId = null;
+            }
 
             if (subscriptionId == null) {
                 log.warn("Razorpay webhook missing subscription id for event {}", eventType);
                 return ResponseEntity.ok().build();
             }
 
+            final String finalSubscriptionId = subscriptionId;
             UUID accountId = subscriptionRepository.findByRazorpaySubscriptionId(subscriptionId)
                     .map(s -> s.getAccountId())
                     .orElse(null);
             if (accountId == null) {
-                log.warn("Razorpay webhook for unknown subscription {}", subscriptionId);
+                log.warn("Razorpay webhook for unknown subscription {}", finalSubscriptionId);
                 return ResponseEntity.ok().build();
             }
 
@@ -80,52 +101,11 @@ public class RazorpayWebhookController {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             byte[] computed = mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
-            byte[] supplied = hexToBytes(signature);
+            byte[] supplied = HmacUtil.hexToBytes(signature);
             return MessageDigest.isEqual(computed, supplied);
         } catch (Exception e) {
             log.error("Razorpay signature validation error: {}", e.getMessage());
             return false;
         }
-    }
-
-    private static byte[] hexToBytes(String hex) {
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
-    }
-
-    // Razorpay nests subscription id under payload.subscription.entity.id
-    private static String extractSubscriptionId(String json) {
-        // Try nested path first, then flat
-        int subIdx = json.indexOf("\"subscription\"");
-        if (subIdx != -1) {
-            String sub = json.substring(subIdx);
-            String id = extractJsonString(sub, "id");
-            if (id != null && id.startsWith("sub_")) return id;
-        }
-        return null;
-    }
-
-    private static String extractPaymentId(String json) {
-        int payIdx = json.indexOf("\"payment\"");
-        if (payIdx != -1) {
-            String pay = json.substring(payIdx);
-            String id = extractJsonString(pay, "id");
-            if (id != null && id.startsWith("pay_")) return id;
-        }
-        return null;
-    }
-
-    private static String extractJsonString(String json, String key) {
-        String search = "\"" + key + "\":\"";
-        int start = json.indexOf(search);
-        if (start == -1) return null;
-        start += search.length();
-        int end = json.indexOf('"', start);
-        return end == -1 ? null : json.substring(start, end);
     }
 }
