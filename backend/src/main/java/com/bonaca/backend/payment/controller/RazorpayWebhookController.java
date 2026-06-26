@@ -74,7 +74,7 @@ public class RazorpayWebhookController {
 
     private boolean validateSignature(String body, String signature) {
         String secret = properties.webhookSecret();
-        if (secret == null || secret.isBlank()) return true;
+        if (secret == null || secret.isBlank()) return false;
         if (signature == null) return false;
         try {
             Mac mac = Mac.getInstance("HmacSHA256");

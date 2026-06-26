@@ -4,7 +4,7 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { ApiError, requestOtp } from '@/lib/api';
 
 const RESEND_COUNTDOWN_SECONDS = 30;
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 
 export function formatCountdown(seconds: number) {
   const mm = Math.floor(seconds / 60)
@@ -27,7 +27,7 @@ export function useOtpVerification({
   onVerified: (profileCompleted: boolean) => void;
 }) {
   const { login } = useAuth();
-  const [digits, setDigits] = useState<string[]>(['', '', '', '']);
+  const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_COUNTDOWN_SECONDS);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -45,9 +45,9 @@ export function useOtpVerification({
     try {
       const { profileCompleted } = await login(phoneNumber, code);
       onVerified(profileCompleted);
-    } catch {
-      setErrorMessage('Enter a valid OTP');
-      setDigits(['', '', '', '']);
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : 'Enter a valid OTP');
+      setDigits(['', '', '', '', '', '']);
     } finally {
       setIsVerifying(false);
     }
@@ -66,7 +66,7 @@ export function useOtpVerification({
   const handleResend = async () => {
     setSecondsLeft(RESEND_COUNTDOWN_SECONDS);
     setErrorMessage(null);
-    setDigits(['', '', '', '']);
+    setDigits(['', '', '', '', '', '']);
     try {
       await requestOtp(phoneNumber);
     } catch (error) {

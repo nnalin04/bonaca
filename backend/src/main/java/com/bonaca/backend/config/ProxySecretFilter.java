@@ -22,7 +22,9 @@ public class ProxySecretFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !properties.enabled() || "/health".equals(request.getRequestURI());
+        if (!properties.enabled()) return true;
+        String uri = request.getRequestURI();
+        return "/health".equals(uri) || uri.startsWith("/api/v1/webhooks/");
     }
 
     @Override

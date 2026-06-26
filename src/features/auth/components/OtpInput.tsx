@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Colors, Fonts } from '@/theme/tokens';
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 
 interface OtpInputProps {
   value: string[];

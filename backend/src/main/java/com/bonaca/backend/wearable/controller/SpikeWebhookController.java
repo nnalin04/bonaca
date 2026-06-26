@@ -60,7 +60,7 @@ public class SpikeWebhookController {
     private boolean validateSignature(String body, String signature) {
         String secret = properties.webhookSecret();
         if (secret == null || secret.isBlank()) {
-            return true;
+            return false;
         }
         if (signature == null) return false;
         try {
