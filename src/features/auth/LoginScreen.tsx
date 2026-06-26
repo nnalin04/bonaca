@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -84,6 +85,7 @@ export function LoginScreen() {
               <Pressable
                 accessibilityRole="link"
                 accessibilityLabel="Privacy Policy"
+                onPress={() => Linking.openURL('https://bonaca.in/privacy')}
               >
                 <Text style={styles.privacyLink}>Privacy Policy</Text>
               </Pressable>

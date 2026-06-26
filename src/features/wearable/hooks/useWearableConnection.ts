@@ -3,6 +3,7 @@ import { Linking } from 'react-native';
 
 import { useAuth } from '@/features/auth/AuthContext';
 import { ApiError, getWearableConnection, initiateWearableConnect } from '@/lib/api';
+import { disconnectWearable } from '@/lib/api/wearable';
 import type { WearableConnectionResponse } from '@/types/wearable';
 
 interface UseWearableConnectionResult {
@@ -12,6 +13,7 @@ interface UseWearableConnectionResult {
   errorMessage: string | null;
   connect: () => Promise<void>;
   refresh: () => Promise<void>;
+  disconnect: () => Promise<void>;
 }
 
 export function useWearableConnection(memberId: string | null): UseWearableConnectionResult {
@@ -72,5 +74,18 @@ export function useWearableConnection(memberId: string | null): UseWearableConne
     }
   }, [accessToken, memberId]);
 
-  return { connection, isLoading, isConnecting, errorMessage, connect, refresh };
+  const disconnect = useCallback(async () => {
+    if (!accessToken || !memberId) return;
+    setIsLoading(true);
+    try {
+      await disconnectWearable(accessToken, memberId);
+      await refresh();
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : 'Could not disconnect wearable.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accessToken, memberId, refresh]);
+
+  return { connection, isLoading, isConnecting, errorMessage, connect, refresh, disconnect };
 }

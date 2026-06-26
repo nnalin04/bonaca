@@ -22,6 +22,7 @@ import {
   getProfileDisplayName,
   getWeightValue,
 } from '@/features/profile/model/profileDetails';
+import { useWearableConnection } from '@/features/wearable/hooks/useWearableConnection';
 import { Colors, Fonts, Radii } from '@/theme/tokens';
 
 interface PhysicalStatCardProps {
@@ -37,6 +38,7 @@ export function ProfileDetailsScreen() {
   const insets = useSafeAreaInsets();
   const { self } = useMembers();
   const displayName = getProfileDisplayName(self);
+  const { connection: wearableConn } = useWearableConnection(self?.id ?? null);
   const physicalStats: PhysicalStatCardProps[] = [
     {
       icon: IconScale,
@@ -114,9 +116,15 @@ export function ProfileDetailsScreen() {
         </Text>
         <View style={styles.wearableCard}>
           <View style={styles.wearableText}>
-            <Text style={styles.wearableName}>No wearable connected</Text>
+            <Text style={styles.wearableName}>
+              {wearableConn?.status === 'CONNECTED'
+                ? (wearableConn.provider ?? 'Wearable connected')
+                : 'No wearable connected'}
+            </Text>
             <Text style={styles.wearableSync}>
-              Connect a wearable to start syncing health data
+              {wearableConn?.status === 'CONNECTED'
+                ? (wearableConn.lastSyncedAt ? 'Syncing health data' : 'Connected — waiting for first sync')
+                : 'Connect a wearable to start syncing health data'}
             </Text>
           </View>
         </View>

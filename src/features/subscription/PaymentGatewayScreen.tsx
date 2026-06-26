@@ -22,11 +22,14 @@ export function PaymentGatewayScreen({ accountId }: PaymentGatewayScreenProps) {
     isLoading,
     isPaying,
     errorMessage: subErrorMessage,
+    refresh,
     activateMockPayment,
   } = useCurrentSubscription(accountId);
 
   const [isOpeningPayment, setIsOpeningPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [hasPaidInBrowser, setHasPaidInBrowser] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const resolvedAccountId = accountId ?? self?.accountId ?? null;
   const isActive = subscription?.status === 'active';
@@ -44,6 +47,7 @@ export function PaymentGatewayScreen({ accountId }: PaymentGatewayScreenProps) {
     try {
       const result = await getPaymentLink(accessToken, resolvedAccountId);
       await Linking.openURL(result.paymentLink);
+      setHasPaidInBrowser(true);
     } catch (err) {
       setPaymentError(err instanceof ApiError ? err.message : 'Could not open payment page. Please try again.');
     } finally {
@@ -106,10 +110,26 @@ export function PaymentGatewayScreen({ accountId }: PaymentGatewayScreenProps) {
           )}
 
           {/* After paying in browser the user comes back and confirms */}
-          {!isActive && (
-            <Text style={styles.returnNote}>
-              After paying in your browser, tap below to confirm.
-            </Text>
+          {hasPaidInBrowser && !isActive && (
+            <Pressable
+              style={[styles.confirmButton, isCheckingStatus && styles.payButtonDisabled]}
+              onPress={async () => {
+                setIsCheckingStatus(true);
+                await refresh();
+                setIsCheckingStatus(false);
+                if (subscription?.status === 'active') {
+                  router.replace('/subscription');
+                }
+              }}
+              disabled={isCheckingStatus}
+              accessibilityRole="button"
+              accessibilityLabel="Check payment status">
+              {isCheckingStatus ? (
+                <ActivityIndicator color={Colors.accent} />
+              ) : (
+                <Text style={styles.confirmText}>I've completed payment — check status</Text>
+              )}
+            </Pressable>
           )}
 
           {/* Dev-only mock path (shown when Razorpay not configured yet) */}
@@ -211,13 +231,23 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: Colors.white,
   },
-  returnNote: {
-    marginTop: 12,
+  confirmButton: {
+    width: '100%',
+    minHeight: 44,
+    marginTop: 16,
+    borderRadius: Radii.button,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  confirmText: {
     fontFamily: Fonts.family,
-    fontWeight: '400',
-    fontSize: 13,
-    lineHeight: 18,
-    color: Colors.textSecondary,
+    fontWeight: '600',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.accent,
     textAlign: 'center',
   },
   mockButton: {

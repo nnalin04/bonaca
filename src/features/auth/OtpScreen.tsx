@@ -33,7 +33,7 @@ export function OtpScreen() {
   } = useOtpVerification({
     phoneNumber,
     onVerified: (profileCompleted) =>
-      router.push(
+      router.replace(
         profileCompleted ? '/(tabs)/home' : '/(auth)/complete-profile',
       ),
   });

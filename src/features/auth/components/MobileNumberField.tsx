@@ -1,4 +1,3 @@
-import { IconChevronDown } from '@tabler/icons-react-native';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Colors, Fonts, Radii } from '@/theme/tokens';
@@ -14,7 +13,6 @@ export function MobileNumberField({ countryCode, value, onChangeText }: MobileNu
     <View style={styles.field}>
       <View style={styles.countryCode}>
         <Text style={styles.countryCodeText}>{countryCode}</Text>
-        <IconChevronDown size={20} color={Colors.textPrimary} strokeWidth={1.75} />
       </View>
       <View style={styles.divider} />
       <TextInput

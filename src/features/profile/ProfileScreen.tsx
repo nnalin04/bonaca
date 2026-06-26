@@ -9,7 +9,7 @@ import {
 } from '@tabler/icons-react-native';
 import { useRouter, type Href } from 'expo-router';
 import type { ComponentType } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/features/auth/AuthContext';
@@ -20,14 +20,10 @@ import { SettingsListItem } from '@/features/profile/components/SettingsListItem
 import { WearableConnectCard } from '@/features/profile/components/WearableConnectCard';
 import { WearableConnectedCard } from '@/features/profile/components/WearableConnectedCard';
 import { useProfileSummary } from '@/features/profile/hooks/useProfileSummary';
+import { useWearableConnection } from '@/features/wearable/hooks/useWearableConnection';
 import { Colors } from '@/theme/tokens';
-import type { WearableConnection } from '@/types';
 
-const wearableConnection: WearableConnection | null = null;
-
-const providerLabels: Record<WearableConnection['provider'], string> = {
-  'apple-health': 'Apple Health',
-  'health-connect': 'Health Connect',
+const providerLabels: Record<string, string> = {
   fitbit: 'Fitbit',
   garmin: 'Garmin',
   'samsung-health': 'Samsung Health',
@@ -47,6 +43,8 @@ export function ProfileScreen() {
   const { logout } = useAuth();
   const { self } = useMembers();
   const { phoneNumber } = useProfileSummary();
+  const { connection: wearableConn, disconnect } = useWearableConnection(self?.id ?? null);
+  const isConnected = wearableConn?.status === 'CONNECTED';
 
   const handleLogout = async () => {
     await logout();
@@ -76,19 +74,19 @@ export function ProfileScreen() {
       key: 'documentation',
       icon: IconFileDescription,
       label: 'Documentation',
-      onPress: () => {},
+      onPress: () => Linking.openURL('https://bonaca.in/docs'),
     },
     {
       key: 'terms',
       icon: IconArticle,
       label: 'Terms & Conditions',
-      onPress: () => {},
+      onPress: () => Linking.openURL('https://bonaca.in/terms'),
     },
     {
       key: 'privacy',
       icon: IconFileTextShield,
       label: 'Privacy Policy',
-      onPress: () => {},
+      onPress: () => Linking.openURL('https://bonaca.in/privacy'),
     },
     {
       key: 'logout',
@@ -120,19 +118,25 @@ export function ProfileScreen() {
         />
 
         <View style={styles.wearableSection}>
-          {wearableConnection ? (
+          {isConnected ? (
             <WearableConnectedCard
-              providerLabel={providerLabels[wearableConnection.provider]}
+              providerLabel={
+                wearableConn?.provider
+                  ? (providerLabels[wearableConn.provider] ?? wearableConn.provider)
+                  : 'Wearable'
+              }
               syncLabel={
-                wearableConnection.lastSyncedAt
+                wearableConn?.lastSyncedAt
                   ? 'Last synced: Just now'
                   : 'Not yet synced'
               }
-              onPressDisconnect={() => {}}
+              onPressDisconnect={() => void disconnect()}
             />
           ) : (
             <WearableConnectCard
-              onPressConnect={() => router.push('/(auth)/connect-wearable')}
+              onPressConnect={() =>
+                router.push('/subscription/select-wearable-account' as Href)
+              }
             />
           )}
         </View>
