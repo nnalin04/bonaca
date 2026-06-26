@@ -1,66 +1,39 @@
-import { IconSearch } from '@tabler/icons-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useInviteMember } from '@/features/members/hooks/useInviteMember';
-import { toInvitePhoneNumber } from '@/features/members/model/invitePhone';
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader';
-import { Colors, Fonts } from '@/theme/tokens';
-
-interface ContactOption {
-  name: string;
-  phone: string;
-  initial: string;
-  image?: number;
-}
-
-const contacts: ContactOption[] = [
-  {
-    name: 'Abhishek Kumar',
-    phone: '97426 58812',
-    initial: 'A',
-    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
-  },
-  { name: 'Anurag Patel', phone: '96761 66512', initial: 'A' },
-  {
-    name: 'Arthi',
-    phone: '88812 58812',
-    initial: 'A',
-    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
-  },
-  { name: 'Bhadresh Rao', phone: '74201 56320', initial: 'B' },
-  { name: 'Bhuvan', phone: '94819 64577', initial: 'B' },
-  {
-    name: 'Chandrashekar',
-    phone: '80561 67412',
-    initial: 'C',
-    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
-  },
-  { name: 'Damodar', phone: '97420 11981', initial: 'D' },
-  {
-    name: 'Dinesh Rickshaw',
-    phone: '99803 51212',
-    initial: 'D',
-    image: require('../../../assets/images/avatars/prasanna-kumar.png'),
-  },
-  { name: 'Gangadhar', phone: '88812 58812', initial: 'G' },
-  { name: 'Arthi', phone: '88812 58812', initial: 'A' },
-];
+import { Colors, Fonts, Radii } from '@/theme/tokens';
+import type { InviteResponse } from '@/types/members';
 
 export function InviteMemberScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { invitesByPhone, pendingPhone, errorMessage, inviteContact } =
-    useInviteMember();
+  const [phoneInput, setPhoneInput] = useState('');
+  const { invites, pendingPhone, errorMessage, inviteContact } = useInviteMember();
+
+  const normalizedInput = phoneInput.trim().replace(/\s/g, '');
+  const canInvite =
+    normalizedInput.length >= 10 &&
+    pendingPhone !== normalizedInput &&
+    pendingPhone !== `+91${normalizedInput}`;
+
+  const handleInvite = async () => {
+    if (!canInvite) return;
+    await inviteContact(normalizedInput);
+    setPhoneInput('');
+  };
 
   return (
     <View style={styles.screen}>
@@ -77,100 +50,88 @@ export function InviteMemberScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.subtitle}>
-          Invite a family member to approve billing after your free trial
+          Enter the mobile number of the family member you want to invite.
         </Text>
+
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
 
-        <View style={styles.searchBox}>
-          <IconSearch size={24} color={Colors.textSecondary} strokeWidth={2} />
-          <Text style={styles.searchPlaceholder}>Search contact</Text>
+        <View style={styles.inputRow}>
+          <View style={styles.countryCode}>
+            <Text style={styles.countryCodeText}>+91</Text>
+          </View>
+          <TextInput
+            style={styles.input}
+            value={phoneInput}
+            onChangeText={setPhoneInput}
+            placeholder="Mobile number"
+            placeholderTextColor={Colors.placeholderText}
+            keyboardType="number-pad"
+            maxLength={10}
+            returnKeyType="done"
+            onSubmitEditing={handleInvite}
+          />
+          <Pressable
+            style={[styles.inviteButton, !canInvite && styles.inviteButtonDisabled]}
+            onPress={handleInvite}
+            disabled={!canInvite || Boolean(pendingPhone)}
+            accessibilityRole="button"
+            accessibilityLabel="Send invite"
+          >
+            {pendingPhone ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={styles.inviteButtonText}>Invite</Text>
+            )}
+          </Pressable>
         </View>
 
-        <View style={styles.contactList}>
-          {contacts.map((contact, index) => (
-            <ContactRow
-              key={`${contact.name}-${contact.phone}-${index}`}
-              contact={contact}
-              inviteStatus={
-                invitesByPhone.get(toInvitePhoneNumber(contact.phone))?.status
-              }
-              isPending={pendingPhone === toInvitePhoneNumber(contact.phone)}
-              onInvite={() => void inviteContact(contact.phone)}
-            />
-          ))}
-        </View>
+        {invites.length > 0 && (
+          <>
+            <Text style={styles.sentTitle}>Sent Invites</Text>
+            <View style={styles.inviteList}>
+              {invites.map((invite) => (
+                <SentInviteRow key={invite.id} invite={invite} />
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
 }
 
-interface ContactRowProps {
-  contact: ContactOption;
-  inviteStatus?: 'pending' | 'accepted' | 'expired';
-  isPending: boolean;
-  onInvite: () => void;
-}
+function SentInviteRow({ invite }: { invite: InviteResponse }) {
+  const statusLabel =
+    invite.status === 'pending'
+      ? 'Invited'
+      : invite.status === 'accepted'
+        ? 'Joined'
+        : invite.status === 'expired'
+          ? 'Expired'
+          : invite.status;
 
-function ContactRow({
-  contact,
-  inviteStatus,
-  isPending,
-  onInvite,
-}: ContactRowProps) {
-  const isDisabled =
-    isPending || inviteStatus === 'pending' || inviteStatus === 'accepted';
-  const inviteLabel = getInviteLabel(inviteStatus);
+  const statusColor =
+    invite.status === 'accepted'
+      ? Colors.connectedChipText
+      : invite.status === 'expired'
+        ? Colors.error
+        : Colors.textSecondary;
+
+  const initial = invite.phoneNumber ? invite.phoneNumber.slice(-4, -3) : '?';
 
   return (
-    <View style={styles.contactRow}>
-      {contact.image ? (
-        <Image
-          source={contact.image}
-          style={styles.avatarImage}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={styles.avatarFallback}>
-          <Text style={styles.avatarInitial}>{contact.initial}</Text>
-        </View>
-      )}
-
-      <View style={styles.contactText}>
-        <Text style={styles.contactName}>{contact.name}</Text>
-        <Text style={styles.contactPhone}>{contact.phone}</Text>
+    <View style={styles.inviteRow}>
+      <View style={styles.avatarFallback}>
+        <Text style={styles.avatarInitial}>{initial.toUpperCase()}</Text>
       </View>
-
-      <Pressable
-        hitSlop={8}
-        disabled={isDisabled}
-        onPress={onInvite}
-        accessibilityRole="button"
-        accessibilityLabel={`${inviteLabel} ${contact.name}`}
-      >
-        {isPending ? (
-          <ActivityIndicator size="small" />
-        ) : (
-          <Text
-            style={[
-              styles.inviteLabel,
-              isDisabled && styles.inviteLabelDisabled,
-            ]}
-          >
-            {inviteLabel}
-          </Text>
-        )}
-      </Pressable>
+      <View style={styles.inviteText}>
+        <Text style={styles.invitePhone}>{invite.phoneNumber}</Text>
+        <Text style={[styles.inviteStatus, { color: statusColor }]}>{statusLabel}</Text>
+      </View>
     </View>
   );
-}
-
-function getInviteLabel(status?: 'pending' | 'accepted' | 'expired'): string {
-  if (status === 'pending') return 'Invited';
-  if (status === 'accepted') return 'Joined';
-  if (status === 'expired') return 'Invite again';
-  return 'Invite';
 }
 
 const styles = StyleSheet.create({
@@ -181,69 +142,101 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 16,
     paddingTop: 20,
+    gap: 16,
   },
   subtitle: {
     fontFamily: Fonts.family,
     fontWeight: '400',
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
     color: Colors.textSecondary,
   },
   errorText: {
-    marginTop: 12,
     fontFamily: Fonts.family,
     fontWeight: '500',
     fontSize: 14,
     lineHeight: 20,
     color: Colors.error,
   },
-  searchBox: {
+  inputRow: {
     height: 48,
-    marginTop: 16,
-    borderRadius: 8,
+    borderRadius: Radii.cta,
     borderWidth: 1,
-    borderColor: Colors.onboardingCardBorder,
+    borderColor: Colors.inputBorder,
     backgroundColor: Colors.white,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
+    overflow: 'hidden',
   },
-  searchPlaceholder: {
+  countryCode: {
+    paddingHorizontal: 12,
+    borderRightWidth: 1,
+    borderRightColor: Colors.inputBorder,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  countryCodeText: {
     fontFamily: Fonts.family,
     fontWeight: '400',
     fontSize: 16,
+    lineHeight: 20,
+    color: Colors.textPrimary,
+  },
+  input: {
+    flex: 1,
+    paddingHorizontal: 12,
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 16,
+    lineHeight: 20,
+    color: Colors.textPrimary,
+    padding: 0,
+  },
+  inviteButton: {
+    height: '100%',
+    paddingHorizontal: 16,
+    backgroundColor: Colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteButtonDisabled: {
+    opacity: 0.5,
+  },
+  inviteButtonText: {
+    fontFamily: Fonts.family,
+    fontWeight: '600',
+    fontSize: 15,
+    lineHeight: 20,
+    color: Colors.white,
+  },
+  sentTitle: {
+    fontFamily: Fonts.family,
+    fontWeight: '500',
+    fontSize: 16,
     lineHeight: 22,
-    color: Colors.searchPlaceholder,
+    color: Colors.textPrimary,
+    marginTop: 8,
   },
-  contactList: {
-    marginTop: 12,
+  inviteList: {
     backgroundColor: Colors.white,
-    paddingTop: 8,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    overflow: 'hidden',
   },
-  contactRow: {
-    height: 56,
-    marginHorizontal: 8,
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.onboardingCardBorder,
+  inviteRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-  },
-  avatarImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.avatarBorder,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.cardBorder,
+    gap: 12,
   },
   avatarFallback: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.avatarBorder,
     backgroundColor: Colors.avatarPlaceholderInnerBg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -251,37 +244,25 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontFamily: Fonts.family,
     fontWeight: '600',
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.avatarPlaceholderFg,
   },
-  contactText: {
+  inviteText: {
     flex: 1,
-    marginLeft: 8,
+    gap: 2,
   },
-  contactName: {
+  invitePhone: {
     fontFamily: Fonts.family,
     fontWeight: '500',
     fontSize: 14,
     lineHeight: 20,
     color: Colors.textPrimary,
   },
-  contactPhone: {
+  inviteStatus: {
     fontFamily: Fonts.family,
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 16,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  inviteLabel: {
-    fontFamily: Fonts.family,
-    fontWeight: '600',
-    fontSize: 16,
-    lineHeight: 24,
-    color: Colors.accent,
-  },
-  inviteLabelDisabled: {
-    color: Colors.textSecondary,
   },
 });

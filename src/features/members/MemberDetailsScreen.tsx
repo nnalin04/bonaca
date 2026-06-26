@@ -100,6 +100,8 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
     member?.pinned ? 'Unpin from top' : 'Pin to top',
     'Edit Nick Name',
     'Edit Permissions',
+    member?.hidden ? 'Unhide Member' : 'Hide Member',
+    'View Insights',
     'Hidden Members',
   ];
 
@@ -112,6 +114,11 @@ export function MemberDetailsScreen({ memberId }: MemberDetailsScreenProps) {
       setNicknameModalVisible(true);
     } else if (option === 'Edit Permissions') {
       router.push(`/members/${memberId}/permissions`);
+    } else if (option === 'Hide Member' || option === 'Unhide Member') {
+      await updateMember(accessToken, memberId, { hidden: !member.hidden });
+      await refreshMember();
+    } else if (option === 'View Insights') {
+      router.push(`/member/${memberId}/insights`);
     } else if (option === 'Hidden Members') {
       router.push('/members/hidden');
     }

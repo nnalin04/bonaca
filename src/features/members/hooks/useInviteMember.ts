@@ -6,6 +6,7 @@ import { ApiError, createInvite, listInvites } from '@/lib/api';
 import type { InviteResponse } from '@/types/members';
 
 interface UseInviteMemberResult {
+  invites: InviteResponse[];
   invitesByPhone: Map<string, InviteResponse>;
   pendingPhone: string | null;
   errorMessage: string | null;
@@ -82,5 +83,5 @@ export function useInviteMember(): UseInviteMemberResult {
     [accessToken],
   );
 
-  return { invitesByPhone, pendingPhone, errorMessage, inviteContact };
+  return { invites, invitesByPhone, pendingPhone, errorMessage, inviteContact };
 }
